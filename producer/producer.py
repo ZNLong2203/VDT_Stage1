@@ -4,6 +4,8 @@ import random
 from datetime import datetime
 from kafka import KafkaProducer
 
+time.sleep(5)
+
 producer = KafkaProducer(
     bootstrap_servers='kafka:9092',
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
@@ -19,7 +21,7 @@ while True:
         "product_id": random.choice(products),
         "action": random.choice(actions),
         "location": random.choice(locations),
-        "event_time": datetime.utcnow().isoformat()
+        "event_time": int(time.time() * 1000)
     }
     producer.send("user_events", event)
     print("Sent:", event)

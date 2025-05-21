@@ -11,6 +11,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks: ["pinot-network"]
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -21,10 +22,12 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
       - "9092:9092"
+    networks: ["pinot-network"]
 
   pinot-controller:
     image: apachepinot/pinot:1.2.0
@@ -44,6 +47,7 @@ services:
       - "StartController"
       - "-zkAddress"
       - "zookeeper:2181"
+    networks: ["pinot-network"]
 
   pinot-broker:
     image: apachepinot/pinot:1.2.0
@@ -63,6 +67,7 @@ services:
       - "StartBroker"
       - "-zkAddress"
       - "zookeeper:2181"
+    networks: ["pinot-network"]
 
   pinot-server:
     image: apachepinot/pinot:1.2.0
@@ -82,6 +87,7 @@ services:
       - "StartServer"
       - "-zkAddress"
       - "zookeeper:2181"
+    networks: ["pinot-network"]
 
   trino:
     image: trinodb/trino:latest
@@ -90,6 +96,7 @@ services:
       - "8081:8080"
     volumes:
       - ./trino-config:/etc/trino:ro
+    networks: ["pinot-network"]
 
   superset:
     build:
@@ -106,6 +113,7 @@ services:
       ADMIN_EMAIL: admin@superset.com
     ports:
       - "8088:8088"
+    networks: ["pinot-network"]
 
   producer:
     build:
@@ -113,6 +121,11 @@ services:
       dockerfile: Dockerfile
     container_name: kafka-producer
     depends_on: ["kafka"]
+    networks: ["pinot-network"]
 
 volumes:
   trino-config: {}
+
+networks:
+  pinot-network:
+    driver: bridge
