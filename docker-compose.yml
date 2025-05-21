@@ -1,0 +1,80 @@
+services:
+
+  ## 1. Zookeeper & Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports: ["2181:2181"]
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on: ["zookeeper"]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports: ["9092:9092"]
+
+  ## 2. Pinot all-in-one (StartServiceManager)
+  pinot:
+    image: apachepinot/pinot:1.2.0                   # Pull specific release: 1.2.0 :contentReference[oaicite:5]{index=5}
+    container_name: pinot
+    depends_on: [ "zookeeper" ]
+    ports:
+      - "9000:9000"                                  # Controller UI port :contentReference[oaicite:6]{index=6}
+      - "8099:8099"                                  # Broker MySQL-port :contentReference[oaicite:7]{index=7}
+      - "8098:8098"                                  # Server HTTP-port :contentReference[oaicite:8]{index=8}
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: >
+      /opt/pinot/bin/pinot-admin.sh StartServiceManager \
+        -clusterName PinotCluster \
+        -zkAddress zookeeper:2181 \
+      && tail -f /dev/null                
+      
+
+  ## 3. Trino (Presto) with proper config mount
+  trino:
+    image: trinodb/trino:latest
+    container_name: trino
+    depends_on: ["pinot"]
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./trino-config:/etc/trino:ro
+
+
+  ## 4. Superset
+  superset:
+    image: apache/superset:latest
+    container_name: superset
+    depends_on: ["trino"]
+    environment:
+      SUPERSET_SECRET_KEY: "thisISaSECRET_1234"
+      FLASK_APP: superset
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin
+      ADMIN_EMAIL: admin@superset.com
+    ports: ["8088:8088"]
+    command: >
+      /bin/bash -c "
+      superset db upgrade &&
+      superset fab create-admin \
+        --username admin --firstname Admin --lastname User \
+        --email admin@superset.com --password admin &&
+      superset init &&
+      superset run -p 8088 --with-threads --reload --debugger"
+
+  ## 5. Producer (build image with kafka-python)
+  producer:
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    container_name: kafka-producer
+    depends_on: ["kafka"]
+
+volumes:
+  trino-config: {}
