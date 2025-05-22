@@ -1,28 +1,30 @@
 import json
-import time
 import random
+import time
 from datetime import datetime
+from faker import Faker
 from kafka import KafkaProducer
 
-time.sleep(5)
-
+fake = Faker()
 producer = KafkaProducer(
     bootstrap_servers='kafka:9092',
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
-actions = ["view", "add_to_cart", "purchase"]
-products = [f"P{str(i).zfill(4)}" for i in range(1, 101)]
-locations = ["Hanoi", "HCM", "Da Nang", "Can Tho", "Hai Phong"]
+channels = ['web', 'mobile', 'store']
 
-while True:
-    event = {
-        "user_id": f"user_{random.randint(1, 1000)}",
-        "product_id": random.choice(products),
-        "action": random.choice(actions),
-        "location": random.choice(locations),
-        "event_time": int(time.time() * 1000)
+def generate_order():
+    return {
+        "order_id": fake.uuid4(),
+        "user_id": random.randint(1000, 9999),
+        "total": round(random.uniform(10, 500), 2),
+        "created_at": datetime.now().isoformat(),
+        "channel": random.choice(channels)
     }
-    producer.send("user_events", event)
-    print("Sent:", event)
-    time.sleep(1)
+
+if __name__ == "__main__":
+    while True:
+        order = generate_order()
+        print(f"[SEND] {order}")
+        producer.send("retail_orders", order)
+        time.sleep(1)

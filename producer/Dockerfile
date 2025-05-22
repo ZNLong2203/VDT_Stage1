@@ -1,9 +1,10 @@
-FROM python:3.9-slim
-
-RUN pip install kafka-python
-
-COPY producer.py /app/producer.py
+FROM python:3.10-slim
 
 WORKDIR /app
 
-ENTRYPOINT ["python", "producer.py"]
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY producer.py .
+
+CMD ["python", "producer.py"]
