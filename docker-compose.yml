@@ -56,11 +56,14 @@ services:
 
   flink-validator:
     build:
-      context: ./flink-job
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: flink-job/Dockerfile
     container_name: flink-validator
     depends_on:
-      - kafka
+      postgres:
+        condition: service_healthy
+#      kafka:
+#        condition: service_healthy
     networks:
       - starrocks-net
 
@@ -75,6 +78,27 @@ services:
       - "8030:8030"   # StarRocks Web UI
       - "9030:9030"   # MySQL protocol
       - "8040:8040"   # BE query port
+    networks:
+      - starrocks-net
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: retail_user
+      POSTGRES_PASSWORD: retail_pass
+      POSTGRES_DB: retail_db
+    volumes:
+      - ./init/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U retail_user" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - starrocks-net
 
@@ -104,6 +128,7 @@ services:
 
 volumes:
   metabase-data:
+  postgres-data:
 
 networks:
   starrocks-net:

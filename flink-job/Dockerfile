@@ -1,15 +1,19 @@
-FROM flink:1.17-scala_2.12-java11
+FROM flink:1.17
 
 USER root
 
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get install -y python3 python3-pip wget && \
+    ln -s /usr/bin/python3 /usr/bin/python
 
-RUN pip3 install --no-cache-dir kafka-python
+RUN pip3 install --prefer-binary apache-flink==1.17 kafka-python
 
-WORKDIR /app
+COPY ../jars/flink-sql-connector-postgres-cdc-3.1.1.jar /opt/flink/lib/
+COPY ../jars/mysql-connector-java-8.0.30.jar /opt/flink/lib/
+COPY ../jars/flink-connector-jdbc-3.1.2-1.17.jar /opt/flink/lib/
+COPY ../jars/flink-connector-starrocks-1.2.9_flink-1.17.jar /opt/flink/lib/
 
-COPY app.py .
+WORKDIR /opt/pyflink-job
+COPY flink-job/main.py .
 
-CMD ["python3", "app.py"]
+CMD ["python3", "main.py"]

@@ -1,15 +1,27 @@
 CREATE DATABASE IF NOT EXISTS retail;
-
 USE retail;
 
-CREATE TABLE retail_orders (
-    order_id VARCHAR(32),
-    user_id INT,
-    total DOUBLE,
-    created_at DATETIME,
-    channel VARCHAR(16)
+CREATE TABLE ods_orders_clean (
+  `id` INT,
+  `user_id` INT,
+  `total_amount` DECIMAL(10,2),
+  `status` VARCHAR(20),
+  `created_at` DATETIME
 )
 ENGINE=OLAP
-DUPLICATE KEY(order_id)
-DISTRIBUTED BY HASH(order_id) BUCKETS 3
+PRIMARY KEY(id)
+DISTRIBUTED BY HASH(id) BUCKETS 4
+PROPERTIES ("replication_num" = "1");
+
+CREATE TABLE ods_orders_error (
+  `id` INT,
+  `user_id` INT,
+  `total_amount` DECIMAL(10,2),
+  `status` VARCHAR(20),
+  `created_at` DATETIME,
+  `error_reason` STRING
+)
+ENGINE=OLAP
+DUPLICATE KEY(id)
+DISTRIBUTED BY HASH(id) BUCKETS 4
 PROPERTIES ("replication_num" = "1");
