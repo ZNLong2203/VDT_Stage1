@@ -83,6 +83,7 @@ CREATE TABLE ods_clean (
   'sink.properties.strip_outer_array' = 'true'
 );
 """)
+
 t_env.execute_sql("""
 CREATE TABLE ods_error (
   id           INT,
