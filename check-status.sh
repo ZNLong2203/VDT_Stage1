@@ -38,7 +38,7 @@ ORDER BY table_name;" 2>/dev/null || echo "❌ PostgreSQL connection failed"
 echo ""
 echo "StarRocks:"
 mysql -h 127.0.0.1 -P 9030 -u root --protocol=TCP -e "
-USE ecommerce_dw; 
+USE ecommerce_ods_raw; 
 SELECT 
     'customers' as table_name, COUNT(*) as count FROM customers 
 UNION SELECT 'products', COUNT(*) FROM products 

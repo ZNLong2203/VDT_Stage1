@@ -1,129 +1,97 @@
--- StarRocks Data Warehouse Schema
+-- StarRocks Data Warehouse Schema (5 Selected Tables Only)
 -- Create database for the data warehouse
-CREATE DATABASE IF NOT EXISTS ecommerce_dw;
-USE ecommerce_dw;
+CREATE DATABASE IF NOT EXISTS ecommerce_ods_raw;
+USE ecommerce_ods_raw;
 
 -- Drop existing tables if they exist to recreate with correct schema
-DROP TABLE IF EXISTS order_items;
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS customers;
+DROP TABLE IF EXISTS ods_orders_raw;
+DROP TABLE IF EXISTS ods_order_items_raw;
+DROP TABLE IF EXISTS ods_products_raw;
+DROP TABLE IF EXISTS ods_reviews_raw;
+DROP TABLE IF EXISTS ods_payments_raw;
 
--- Customers table in StarRocks
-CREATE TABLE IF NOT EXISTS customers (
-    id INT NOT NULL,
-    name STRING,
-    email STRING,
-    created_at DATETIME,
-    updated_at DATETIME
+CREATE TABLE IF NOT EXISTS ods_orders_raw (
+    order_id STRING NOT NULL,
+    customer_id STRING,
+    order_status STRING,
+    order_purchase_timestamp DATETIME,
+    order_delivered_customer_date DATETIME,
+    order_estimated_delivery_date DATETIME
 ) ENGINE=OLAP
-DUPLICATE KEY(id)
-DISTRIBUTED BY HASH(id) BUCKETS 10
+DUPLICATE KEY(order_id)
+DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1",
-    "storage_format" = "DEFAULT"
+    "replication_num" = "1"
 );
 
--- Products table in StarRocks
-CREATE TABLE IF NOT EXISTS products (
-    id INT NOT NULL,
-    name STRING,
-    price DECIMAL(10,2),
-    category STRING,
-    created_at DATETIME
+CREATE TABLE IF NOT EXISTS ods_order_items_raw (
+    order_id STRING NOT NULL,
+    product_id STRING,
+    price DOUBLE,
+    freight_value DOUBLE
 ) ENGINE=OLAP
-DUPLICATE KEY(id)
-DISTRIBUTED BY HASH(id) BUCKETS 10
+DUPLICATE KEY(order_id, product_id)
+DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1",
-    "storage_format" = "DEFAULT"
+    "replication_num" = "1"
 );
 
--- Orders table in StarRocks
-CREATE TABLE IF NOT EXISTS orders (
-    id INT NOT NULL,
-    customer_id INT,
-    total_amount DECIMAL(10,2),
-    status STRING,
-    order_date DATETIME,
-    created_at DATETIME,
-    updated_at DATETIME
+CREATE TABLE IF NOT EXISTS ods_products_raw (
+    product_id STRING NOT NULL,
+    product_category_name STRING
 ) ENGINE=OLAP
-DUPLICATE KEY(id)
-DISTRIBUTED BY HASH(id) BUCKETS 10
+DUPLICATE KEY(product_id)
+DISTRIBUTED BY HASH(product_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1",
-    "storage_format" = "DEFAULT"
+    "replication_num" = "1"
 );
 
--- Order items table in StarRocks
-CREATE TABLE IF NOT EXISTS order_items (
-    id INT NOT NULL,
-    order_id INT,
-    product_id INT,
-    quantity INT,
-    price DECIMAL(10,2),
-    created_at DATETIME
+CREATE TABLE IF NOT EXISTS ods_reviews_raw (
+    order_id STRING NOT NULL,
+    review_score INT
 ) ENGINE=OLAP
-DUPLICATE KEY(id)
-DISTRIBUTED BY HASH(id) BUCKETS 10
+DUPLICATE KEY(order_id)
+DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1",
-    "storage_format" = "DEFAULT"
+    "replication_num" = "1"
 );
 
--- Create analytical views for Metabase
--- Customer summary view
-CREATE VIEW IF NOT EXISTS customer_summary AS
-SELECT 
-    c.id,
-    c.name,
-    c.email,
-    COUNT(o.id) as total_orders,
-    COALESCE(SUM(o.total_amount), 0) as total_spent,
-    MAX(o.order_date) as last_order_date
-FROM customers c
-LEFT JOIN orders o ON c.id = o.customer_id
-GROUP BY c.id, c.name, c.email;
+CREATE TABLE IF NOT EXISTS ods_payments_raw (
+    order_id STRING NOT NULL,
+    payment_type STRING,
+    payment_value DOUBLE
+) ENGINE=OLAP
+DUPLICATE KEY(order_id, payment_type)
+DISTRIBUTED BY HASH(order_id) BUCKETS 10
+PROPERTIES (
+    "replication_num" = "1"
+);
 
--- Product performance view
-CREATE VIEW IF NOT EXISTS product_performance AS
-SELECT 
-    p.id,
-    p.name,
-    p.category,
-    p.price,
-    COUNT(oi.id) as times_ordered,
-    COALESCE(SUM(oi.quantity), 0) as total_quantity_sold,
-    COALESCE(SUM(oi.quantity * oi.price), 0) as total_revenue
-FROM products p
-LEFT JOIN order_items oi ON p.id = oi.product_id
-GROUP BY p.id, p.name, p.category, p.price;
+-- View: Tổng doanh thu và số đơn theo ngày
+CREATE VIEW IF NOT EXISTS daily_order_summary AS
+SELECT
+    DATE(order_purchase_timestamp) AS order_date,
+    COUNT(order_id) AS total_orders
+FROM ods_orders_raw
+GROUP BY DATE(order_purchase_timestamp)
+ORDER BY order_date DESC;
 
--- Daily sales summary view
-CREATE VIEW IF NOT EXISTS daily_sales AS
-SELECT 
-    DATE(o.order_date) as sale_date,
-    COUNT(o.id) as total_orders,
-    SUM(o.total_amount) as total_revenue,
-    COUNT(DISTINCT o.customer_id) as unique_customers,
-    AVG(o.total_amount) as avg_order_value
-FROM orders o
-GROUP BY DATE(o.order_date)
-ORDER BY sale_date DESC;
+-- View: Tổng doanh thu theo loại thanh toán
+CREATE VIEW IF NOT EXISTS payment_by_type AS
+SELECT
+    payment_type,
+    COUNT(DISTINCT order_id) AS num_orders,
+    SUM(payment_value) AS total_revenue
+FROM ods_payments_raw
+GROUP BY payment_type
+ORDER BY total_revenue DESC;
 
--- Order details view for comprehensive analysis
-CREATE VIEW IF NOT EXISTS order_details AS
-SELECT 
-    o.id as order_id,
-    o.order_date,
-    o.status,
-    o.total_amount,
-    c.name as customer_name,
-    c.email as customer_email,
-    COUNT(oi.id) as item_count,
-    SUM(oi.quantity) as total_items
-FROM orders o
-JOIN customers c ON o.customer_id = c.id
-LEFT JOIN order_items oi ON o.id = oi.order_id
-GROUP BY o.id, o.order_date, o.status, o.total_amount, c.name, c.email; 
+-- View: Review trung bình theo trạng thái đơn
+CREATE VIEW IF NOT EXISTS review_by_status AS
+SELECT
+    o.order_status,
+    AVG(r.review_score) AS avg_review_score,
+    COUNT(*) AS num_reviews
+FROM ods_orders_raw o
+JOIN ods_reviews_raw r ON o.order_id = r.order_id
+GROUP BY o.order_status; 

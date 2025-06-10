@@ -1,65 +1,122 @@
--- E-commerce Database Schema
--- Create database and enable extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- PostgreSQL Schema for Olist Brazilian E-Commerce Dataset
+-- Enable logical replication
+ALTER SYSTEM SET wal_level = logical;
+ALTER SYSTEM SET max_replication_slots = 10;
+ALTER SYSTEM SET max_wal_senders = 10;
 
--- Customers table
-CREATE TABLE customers (
-    id SERIAL PRIMARY KEY,
-    customer_uuid UUID DEFAULT uuid_generate_v4(),
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    phone VARCHAR(20),
-    address TEXT,
-    city VARCHAR(100),
-    country VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Products table
-CREATE TABLE products (
-    id SERIAL PRIMARY KEY,
-    product_uuid UUID DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    category VARCHAR(100),
-    price DECIMAL(10,2) NOT NULL,
-    stock_quantity INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Orders table
+-- Create tables
 CREATE TABLE orders (
-    id SERIAL PRIMARY KEY,
-    order_uuid UUID DEFAULT uuid_generate_v4(),
-    customer_id INTEGER REFERENCES customers(id),
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(50) DEFAULT 'pending',
-    total_amount DECIMAL(10,2),
-    shipping_address TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "order_id" TEXT PRIMARY KEY,
+  "customer_id" TEXT,
+  "order_status" TEXT,
+  "order_purchase_timestamp" TIMESTAMP,
+  "order_approved_at" TIMESTAMP,
+  "order_delivered_carrier_date" TIMESTAMP,
+  "order_delivered_customer_date" TIMESTAMP,
+  "order_estimated_delivery_date" TIMESTAMP,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Order items table
-CREATE TABLE order_items (
-    id SERIAL PRIMARY KEY,
-    order_id INTEGER REFERENCES orders(id),
-    product_id INTEGER REFERENCES products(id),
-    quantity INTEGER NOT NULL,
-    unit_price DECIMAL(10,2) NOT NULL,
-    total_price DECIMAL(10,2) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE customers (
+  "customer_id" TEXT PRIMARY KEY,
+  "customer_unique_id" TEXT,
+  "customer_zip_code_prefix" TEXT,
+  "customer_city" TEXT,
+  "customer_state" TEXT,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE order_items (
+  "id" SERIAL PRIMARY KEY,
+  "order_id" TEXT,
+  "order_item_id" INTEGER,
+  "product_id" TEXT,
+  "seller_id" TEXT,
+  "shipping_limit_date" TIMESTAMP,
+  "price" DOUBLE PRECISION,
+  "freight_value" DOUBLE PRECISION,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE payments (
+  "id" SERIAL PRIMARY KEY,
+  "order_id" TEXT,
+  "payment_sequential" INTEGER,
+  "payment_type" TEXT,
+  "payment_installments" INTEGER,
+  "payment_value" DOUBLE PRECISION,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE reviews (
+  "review_id" TEXT PRIMARY KEY,
+  "order_id" TEXT,
+  "review_score" INTEGER,
+  "review_comment_title" TEXT,
+  "review_comment_message" TEXT,
+  "review_creation_date" TIMESTAMP,
+  "review_answer_timestamp" TIMESTAMP,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE products (
+  "product_id" TEXT PRIMARY KEY,
+  "product_category_name" TEXT,
+  "product_name_lenght" INTEGER,
+  "product_description_lenght" INTEGER,
+  "product_photos_qty" INTEGER,
+  "product_weight_g" DOUBLE PRECISION,
+  "product_length_cm" DOUBLE PRECISION,
+  "product_height_cm" DOUBLE PRECISION,
+  "product_width_cm" DOUBLE PRECISION,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sellers (
+  "seller_id" TEXT PRIMARY KEY,
+  "seller_zip_code_prefix" TEXT,
+  "seller_city" TEXT,
+  "seller_state" TEXT,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add foreign keys
+ALTER TABLE orders ADD CONSTRAINT fk_orders_customer 
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id);
+
+ALTER TABLE order_items ADD CONSTRAINT fk_order_items_order 
+    FOREIGN KEY (order_id) REFERENCES orders(order_id);
+    
+ALTER TABLE order_items ADD CONSTRAINT fk_order_items_product 
+    FOREIGN KEY (product_id) REFERENCES products(product_id);
+    
+ALTER TABLE order_items ADD CONSTRAINT fk_order_items_seller 
+    FOREIGN KEY (seller_id) REFERENCES sellers(seller_id);
+
+ALTER TABLE payments ADD CONSTRAINT fk_payments_order 
+    FOREIGN KEY (order_id) REFERENCES orders(order_id);
+
+ALTER TABLE reviews ADD CONSTRAINT fk_reviews_order 
+    FOREIGN KEY (order_id) REFERENCES orders(order_id);
 
 -- Create indexes for better performance
-CREATE INDEX idx_customers_email ON customers(email);
 CREATE INDEX idx_orders_customer_id ON orders(customer_id);
-CREATE INDEX idx_orders_date ON orders(order_date);
+CREATE INDEX idx_orders_status ON orders(order_status);
+CREATE INDEX idx_orders_purchase_timestamp ON orders(order_purchase_timestamp);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX idx_order_items_product_id ON order_items(product_id);
+CREATE INDEX idx_payments_order_id ON payments(order_id);
+CREATE INDEX idx_reviews_order_id ON reviews(order_id);
+
+-- Create publication for logical replication
+CREATE PUBLICATION dbz_publication FOR ALL TABLES;
 
 -- Create triggers for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -73,8 +130,18 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column(); 
+CREATE TRIGGER update_sellers_updated_at BEFORE UPDATE ON sellers
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Create replication slots for CDC (only for selected tables)
+SELECT pg_create_logical_replication_slot('orders_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('order_items_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('products_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('reviews_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('payments_slot', 'pgoutput'); 

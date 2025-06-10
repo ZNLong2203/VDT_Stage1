@@ -16,6 +16,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./sql/postgres-init:/docker-entrypoint-initdb.d
       - ./config/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./dataset:/dataset:ro
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     networks:
       - pipeline-network
