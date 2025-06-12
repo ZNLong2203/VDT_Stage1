@@ -26,9 +26,13 @@ done
 echo "✅ StarRocks is ready!"
 
 # Setup StarRocks schema
-echo "📊 Setting up StarRocks schema..."
+echo "📊 Setting up StarRocks Clean Data schema..."
 mysql -h localhost -P 9030 -u root --protocol=TCP < sql/starrocks-init.sql
-echo "✅ StarRocks schema created!"
+echo "✅ StarRocks Clean Data schema created!"
+
+echo "📊 Setting up StarRocks Error Data schema..."
+mysql -h localhost -P 9030 -u root --protocol=TCP < sql/create-error-schema.sql
+echo "✅ StarRocks Error Data schema created!"
 
 # Create replication slots in PostgreSQL (only for selected tables)
 # echo "🔄 Creating replication slots in PostgreSQL..."

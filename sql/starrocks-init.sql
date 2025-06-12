@@ -1,97 +1,100 @@
--- StarRocks Data Warehouse Schema (5 Selected Tables Only)
--- Create database for the data warehouse
-CREATE DATABASE IF NOT EXISTS ecommerce_ods_raw;
-USE ecommerce_ods_raw;
+-- Create ODS Clean Database and Tables in StarRocks
+-- These tables store cleaned and enriched data from ODS Raw
 
--- Drop existing tables if they exist to recreate with correct schema
-DROP TABLE IF EXISTS ods_orders_raw;
-DROP TABLE IF EXISTS ods_order_items_raw;
-DROP TABLE IF EXISTS ods_products_raw;
-DROP TABLE IF EXISTS ods_reviews_raw;
-DROP TABLE IF EXISTS ods_payments_raw;
+-- Create ODS Clean Database
+CREATE DATABASE IF NOT EXISTS ecommerce_ods_clean;
+USE ecommerce_ods_clean;
 
-CREATE TABLE IF NOT EXISTS ods_orders_raw (
-    order_id STRING NOT NULL,
-    customer_id STRING,
-    order_status STRING,
-    order_purchase_timestamp DATETIME,
+-- Orders Clean Table (enriched with business metrics)
+CREATE TABLE IF NOT EXISTS ods_orders (
+    order_id VARCHAR(50) NOT NULL,
+    customer_id VARCHAR(50) NOT NULL,
+    order_status VARCHAR(20) NOT NULL,
+    order_purchase_timestamp DATETIME NOT NULL,
     order_delivered_customer_date DATETIME,
-    order_estimated_delivery_date DATETIME
-) ENGINE=OLAP
-DUPLICATE KEY(order_id)
+    order_estimated_delivery_date DATETIME,
+    order_year INT NOT NULL,
+    order_month INT NOT NULL,
+    order_day INT NOT NULL,
+    delivery_delay_days INT,
+    is_delivered BOOLEAN NOT NULL
+)
+DUPLICATE KEY (order_id)
 DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1"
+    "replication_num" = "1",
+    "enable_persistent_index" = "false",
+    "compression" = "LZ4"
 );
 
-CREATE TABLE IF NOT EXISTS ods_order_items_raw (
-    order_id STRING NOT NULL,
-    product_id STRING,
-    price DOUBLE,
-    freight_value DOUBLE
-) ENGINE=OLAP
-DUPLICATE KEY(order_id, product_id)
+-- Order Items Clean Table (enriched with pricing metrics)
+CREATE TABLE IF NOT EXISTS ods_order_items (
+    order_id VARCHAR(50) NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    price DOUBLE NOT NULL,
+    freight_value DOUBLE NOT NULL,
+    total_item_value DOUBLE NOT NULL,
+    price_category VARCHAR(10) NOT NULL
+)
+DUPLICATE KEY (order_id, product_id)
 DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1"
+    "replication_num" = "1",
+    "enable_persistent_index" = "false",
+    "compression" = "LZ4"
 );
 
-CREATE TABLE IF NOT EXISTS ods_products_raw (
-    product_id STRING NOT NULL,
-    product_category_name STRING
-) ENGINE=OLAP
-DUPLICATE KEY(product_id)
+-- Products Clean Table (enriched with category grouping)
+CREATE TABLE IF NOT EXISTS ods_products (
+    product_id VARCHAR(50) NOT NULL,
+    product_category_name VARCHAR(100) NOT NULL,
+    category_group VARCHAR(50) NOT NULL
+)
+DUPLICATE KEY (product_id)
 DISTRIBUTED BY HASH(product_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1"
+    "replication_num" = "1",
+    "enable_persistent_index" = "false",
+    "compression" = "LZ4"
 );
 
-CREATE TABLE IF NOT EXISTS ods_reviews_raw (
-    order_id STRING NOT NULL,
-    review_score INT
-) ENGINE=OLAP
-DUPLICATE KEY(order_id)
+-- Reviews Clean Table (enriched with sentiment analysis)
+CREATE TABLE IF NOT EXISTS ods_reviews (
+    order_id VARCHAR(50) NOT NULL,
+    review_score INT NOT NULL,
+    review_category VARCHAR(20) NOT NULL,
+    is_positive_review BOOLEAN NOT NULL
+)
+DUPLICATE KEY (order_id)
 DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1"
+    "replication_num" = "1",
+    "enable_persistent_index" = "false",
+    "compression" = "LZ4"
 );
 
-CREATE TABLE IF NOT EXISTS ods_payments_raw (
-    order_id STRING NOT NULL,
-    payment_type STRING,
-    payment_value DOUBLE
-) ENGINE=OLAP
-DUPLICATE KEY(order_id, payment_type)
+-- Payments Clean Table (enriched with payment categorization)
+CREATE TABLE IF NOT EXISTS ods_payments (
+    order_id VARCHAR(50) NOT NULL,
+    payment_type VARCHAR(20) NOT NULL,
+    payment_value DOUBLE NOT NULL,
+    payment_category VARCHAR(30) NOT NULL,
+    is_high_value BOOLEAN NOT NULL
+)
+DUPLICATE KEY (order_id, payment_type)
 DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1"
+    "replication_num" = "1",
+    "enable_persistent_index" = "false",
+    "compression" = "LZ4"
 );
 
--- View: Tổng doanh thu và số đơn theo ngày
-CREATE VIEW IF NOT EXISTS daily_order_summary AS
-SELECT
-    DATE(order_purchase_timestamp) AS order_date,
-    COUNT(order_id) AS total_orders
-FROM ods_orders_raw
-GROUP BY DATE(order_purchase_timestamp)
-ORDER BY order_date DESC;
+-- Show created clean data tables
+SHOW TABLES;
 
--- View: Tổng doanh thu theo loại thanh toán
-CREATE VIEW IF NOT EXISTS payment_by_type AS
-SELECT
-    payment_type,
-    COUNT(DISTINCT order_id) AS num_orders,
-    SUM(payment_value) AS total_revenue
-FROM ods_payments_raw
-GROUP BY payment_type
-ORDER BY total_revenue DESC;
-
--- View: Review trung bình theo trạng thái đơn
-CREATE VIEW IF NOT EXISTS review_by_status AS
-SELECT
-    o.order_status,
-    AVG(r.review_score) AS avg_review_score,
-    COUNT(*) AS num_reviews
-FROM ods_orders_raw o
-JOIN ods_reviews_raw r ON o.order_id = r.order_id
-GROUP BY o.order_status; 
+-- Display clean table structures for verification
+DESCRIBE ods_orders;
+DESCRIBE ods_order_items;
+DESCRIBE ods_products;
+DESCRIBE ods_reviews;
+DESCRIBE ods_payments;
