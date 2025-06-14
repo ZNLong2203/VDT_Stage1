@@ -48,23 +48,6 @@ The ETL job reads data from StarRocks ODS Raw tables (populated by CDC) and appl
 - **Business Logic**: High value payment flag (≥200)
 - **Enrichment**: `payment_category`, `is_high_value`
 
-## Quick Start
-
-### 1. Build the Project
-```bash
-./scripts/build-java-etl.sh
-```
-
-### 2. Run ETL Job
-```bash
-./scripts/run-java-etl.sh
-```
-
-### 3. Run Complete Pipeline
-```bash
-./scripts/run-complete-etl.sh
-```
-
 ## Architecture
 
 ```

@@ -5,6 +5,7 @@ package com.vdt.etl;
  * 
  * Contains all source and sink table definitions
  * Compatible with Java 11 (no text blocks)
+ * Updated with soft delete support and primary key mode
  */
 public class SqlQueries {
     
@@ -126,6 +127,9 @@ public class SqlQueries {
         "    order_day INT," +
         "    delivery_delay_days INT," +
         "    is_delivered BOOLEAN," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
         "    PRIMARY KEY (order_id) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +
@@ -139,8 +143,7 @@ public class SqlQueries {
         "    'sink.properties.strip_outer_array' = 'true'," +
         "    'sink.buffer-flush.max-rows' = '64000'," +
         "    'sink.buffer-flush.interval-ms' = '5000'," +
-        "    'sink.semantic' = 'at-least-once'," +
-        "    'sink.properties.partial_update' = 'false'" +
+        "    'sink.semantic' = 'exactly-once'" +
         ")";
     
     public static final String CREATE_ORDER_ITEMS_SINK = 
@@ -151,6 +154,9 @@ public class SqlQueries {
         "    freight_value DOUBLE," +
         "    total_item_value DOUBLE," +
         "    price_category STRING," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
         "    PRIMARY KEY (order_id, product_id) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +
@@ -163,7 +169,8 @@ public class SqlQueries {
         "    'sink.properties.format' = 'json'," +
         "    'sink.properties.strip_outer_array' = 'true'," +
         "    'sink.buffer-flush.max-rows' = '64000'," +
-        "    'sink.buffer-flush.interval-ms' = '5000'" +
+        "    'sink.buffer-flush.interval-ms' = '5000'," +
+        "    'sink.semantic' = 'exactly-once'" +
         ")";
     
     public static final String CREATE_PRODUCTS_SINK = 
@@ -171,6 +178,9 @@ public class SqlQueries {
         "    product_id STRING," +
         "    product_category_name STRING," +
         "    category_group STRING," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
         "    PRIMARY KEY (product_id) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +
@@ -183,7 +193,8 @@ public class SqlQueries {
         "    'sink.properties.format' = 'json'," +
         "    'sink.properties.strip_outer_array' = 'true'," +
         "    'sink.buffer-flush.max-rows' = '64000'," +
-        "    'sink.buffer-flush.interval-ms' = '5000'" +
+        "    'sink.buffer-flush.interval-ms' = '5000'," +
+        "    'sink.semantic' = 'exactly-once'" +
         ")";
     
     public static final String CREATE_REVIEWS_SINK = 
@@ -192,6 +203,9 @@ public class SqlQueries {
         "    review_score INT," +
         "    review_category STRING," +
         "    is_positive_review BOOLEAN," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
         "    PRIMARY KEY (order_id) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +
@@ -204,7 +218,8 @@ public class SqlQueries {
         "    'sink.properties.format' = 'json'," +
         "    'sink.properties.strip_outer_array' = 'true'," +
         "    'sink.buffer-flush.max-rows' = '64000'," +
-        "    'sink.buffer-flush.interval-ms' = '5000'" +
+        "    'sink.buffer-flush.interval-ms' = '5000'," +
+        "    'sink.semantic' = 'exactly-once'" +
         ")";
     
     public static final String CREATE_PAYMENTS_SINK = 
@@ -214,6 +229,9 @@ public class SqlQueries {
         "    payment_value DOUBLE," +
         "    payment_category STRING," +
         "    is_high_value BOOLEAN," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
         "    PRIMARY KEY (order_id, payment_type) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +
@@ -226,7 +244,8 @@ public class SqlQueries {
         "    'sink.properties.format' = 'json'," +
         "    'sink.properties.strip_outer_array' = 'true'," +
         "    'sink.buffer-flush.max-rows' = '64000'," +
-        "    'sink.buffer-flush.interval-ms' = '5000'" +
+        "    'sink.buffer-flush.interval-ms' = '5000'," +
+        "    'sink.semantic' = 'exactly-once'" +
         ")";
     
     // =============================================================================
@@ -244,7 +263,11 @@ public class SqlQueries {
         "    error_type STRING," +
         "    error_message STRING," +
         "    error_timestamp TIMESTAMP(3)," +
-        "    raw_data STRING" +
+        "    raw_data STRING," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
+        "    PRIMARY KEY (order_id, error_timestamp) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +
         "    'jdbc-url' = 'jdbc:mysql://localhost:9030'," +
@@ -268,7 +291,11 @@ public class SqlQueries {
         "    error_type STRING," +
         "    error_message STRING," +
         "    error_timestamp TIMESTAMP(3)," +
-        "    raw_data STRING" +
+        "    raw_data STRING," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
+        "    PRIMARY KEY (order_id, product_id, error_timestamp) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +
         "    'jdbc-url' = 'jdbc:mysql://localhost:9030'," +
@@ -290,7 +317,11 @@ public class SqlQueries {
         "    error_type STRING," +
         "    error_message STRING," +
         "    error_timestamp TIMESTAMP(3)," +
-        "    raw_data STRING" +
+        "    raw_data STRING," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
+        "    PRIMARY KEY (product_id, error_timestamp) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +
         "    'jdbc-url' = 'jdbc:mysql://localhost:9030'," +
@@ -312,7 +343,11 @@ public class SqlQueries {
         "    error_type STRING," +
         "    error_message STRING," +
         "    error_timestamp TIMESTAMP(3)," +
-        "    raw_data STRING" +
+        "    raw_data STRING," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
+        "    PRIMARY KEY (order_id, error_timestamp) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +
         "    'jdbc-url' = 'jdbc:mysql://localhost:9030'," +
@@ -336,6 +371,9 @@ public class SqlQueries {
         "    error_type STRING," +
         "    error_message STRING," +
         "    raw_data STRING," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
         "    PRIMARY KEY (order_id, payment_type, error_timestamp) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'starrocks'," +

@@ -1,5 +1,6 @@
 -- Create Error Database and Tables in StarRocks
 -- Separate schema for data quality monitoring
+-- Updated with PRIMARY KEY and is_deleted for soft delete functionality
 
 -- Create Error Database
 CREATE DATABASE IF NOT EXISTS ecommerce_ods_error;
@@ -15,13 +16,16 @@ CREATE TABLE IF NOT EXISTS ods_error_log (
     error_timestamp DATETIME NOT NULL,
     raw_data JSON,
     retry_count INT,
-    is_resolved BOOLEAN
+    is_resolved BOOLEAN,
+    is_deleted BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY (error_id)
+PRIMARY KEY (error_id)
 DISTRIBUTED BY HASH(error_id) BUCKETS 10
 PROPERTIES (
     "replication_num" = "1",
-    "enable_persistent_index" = "false",
+    "enable_persistent_index" = "true",
     "compression" = "LZ4"
 );
 
@@ -36,13 +40,16 @@ CREATE TABLE IF NOT EXISTS ods_orders_error (
     order_estimated_delivery_date DATETIME,
     error_type VARCHAR(50) NOT NULL,
     error_message VARCHAR(500) NOT NULL,
-    raw_data JSON
+    raw_data JSON,
+    is_deleted BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY (order_id, error_timestamp)
+PRIMARY KEY (order_id, error_timestamp)
 DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
     "replication_num" = "1",
-    "enable_persistent_index" = "false",
+    "enable_persistent_index" = "true",
     "compression" = "LZ4"
 );
 
@@ -55,13 +62,16 @@ CREATE TABLE IF NOT EXISTS ods_order_items_error (
     freight_value DOUBLE,
     error_type VARCHAR(50) NOT NULL,
     error_message VARCHAR(500) NOT NULL,
-    raw_data JSON
+    raw_data JSON,
+    is_deleted BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY (order_id, product_id, error_timestamp)
+PRIMARY KEY (order_id, product_id, error_timestamp)
 DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
     "replication_num" = "1",
-    "enable_persistent_index" = "false",
+    "enable_persistent_index" = "true",
     "compression" = "LZ4"
 );
 
@@ -72,13 +82,16 @@ CREATE TABLE IF NOT EXISTS ods_products_error (
     product_category_name VARCHAR(100),
     error_type VARCHAR(50) NOT NULL,
     error_message VARCHAR(500) NOT NULL,
-    raw_data JSON
+    raw_data JSON,
+    is_deleted BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY (product_id, error_timestamp)
+PRIMARY KEY (product_id, error_timestamp)
 DISTRIBUTED BY HASH(product_id) BUCKETS 10
 PROPERTIES (
     "replication_num" = "1",
-    "enable_persistent_index" = "false",
+    "enable_persistent_index" = "true",
     "compression" = "LZ4"
 );
 
@@ -89,13 +102,16 @@ CREATE TABLE IF NOT EXISTS ods_reviews_error (
     review_score INT,
     error_type VARCHAR(50) NOT NULL,
     error_message VARCHAR(500) NOT NULL,
-    raw_data JSON
+    raw_data JSON,
+    is_deleted BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY (order_id, error_timestamp)
+PRIMARY KEY (order_id, error_timestamp)
 DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
     "replication_num" = "1",
-    "enable_persistent_index" = "false",
+    "enable_persistent_index" = "true",
     "compression" = "LZ4"
 );
 
@@ -107,13 +123,16 @@ CREATE TABLE IF NOT EXISTS ods_payments_error (
     payment_value DOUBLE,
     error_type VARCHAR(50) NOT NULL,
     error_message VARCHAR(500) NOT NULL,
-    raw_data JSON
+    raw_data JSON,
+    is_deleted BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY (order_id, payment_type, error_timestamp)
+PRIMARY KEY (order_id, payment_type, error_timestamp)
 DISTRIBUTED BY HASH(order_id) BUCKETS 10
 PROPERTIES (
     "replication_num" = "1",
-    "enable_persistent_index" = "false",
+    "enable_persistent_index" = "true",
     "compression" = "LZ4"
 );
 
