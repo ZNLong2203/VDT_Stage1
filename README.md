@@ -6,8 +6,7 @@
 PostgreSQL → Apache Flink → StarRocks → Metabase
 ```
 
-Real-time streaming pipeline that processes 7 source tables:
-- orders, order_items, products, customers, payments, reviews, sellers
+Dataset: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
 
 ## Features
 
@@ -54,5 +53,5 @@ Real-time streaming pipeline that processes 7 source tables:
 ├── flink/java-etl/            # Flink streaming jobs
 ├── demo-data-generator/       # Real-time data generator
 ├── sql/                       # Database schemas
-└── metabase_queries/          # Dashboard queries
+└── metabase-queries/          # Dashboard queries
 ```
