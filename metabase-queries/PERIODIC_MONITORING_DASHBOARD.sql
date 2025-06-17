@@ -1,5 +1,5 @@
 -- ========================================
--- Query 1: Monthly Revenue Trends (SIMPLIFIED)
+-- Query 1: Monthly Revenue Trends 
 -- ========================================
 SELECT 
     YEAR(o.order_purchase_timestamp) as year,
@@ -23,7 +23,7 @@ ORDER BY year, month;
 -- Title: "Monthly Revenue & Orders Trend"
 
 -- ========================================
--- Query 2: Customer Lifetime Value Segmentation (WORKING)
+-- Query 2: Customer Lifetime Value Segmentation 
 -- ========================================
 SELECT 
     customer_segment,
@@ -57,7 +57,7 @@ ORDER BY avg_clv DESC;
 -- Title: "Customer Segmentation by Lifetime Value"
 
 -- ========================================
--- Query 3: Product Category Performance (WORKING)
+-- Query 3: Product Category Performance 
 -- ========================================
 SELECT 
     p.category_group,
@@ -79,7 +79,7 @@ ORDER BY total_revenue DESC;
 -- Title: "Revenue by Product Category"
 
 -- ========================================
--- Query 4: Weekly Order Trends (FIXED)
+-- Query 4: Weekly Order Trends 
 -- ========================================
 SELECT 
     DAYOFWEEK(o.order_purchase_timestamp) as day_of_week,
@@ -108,7 +108,7 @@ ORDER BY day_of_week;
 -- Title: "Orders by Day of Week"
 
 -- ========================================
--- Query 5: Payment Method Distribution (SIMPLIFIED)
+-- Query 5: Payment Method Distribution 
 -- ========================================
 SELECT 
     payment_type,
@@ -126,91 +126,3 @@ ORDER BY total_value DESC;
 -- Dimension: payment_type
 -- Measure: total_value
 -- Title: "Revenue Distribution by Payment Method"
-
--- ========================================
--- DETAILED CHART SETUP INSTRUCTIONS
--- ========================================
-
-/*
-QUERY 1 - Monthly Revenue Trends:
-1. Chart Type: Line Chart
-2. Data Section:
-   - X-axis: year_month (Dimension)
-   - Y-axis: total_revenue (Measure)
-   - Series: total_orders (Optional secondary line)
-3. Display Settings:
-   - Title: "Monthly Revenue & Orders Trend"
-   - Show data labels: Yes
-   - Smooth lines: Yes
-
-QUERY 2 - Customer LTV Segmentation:
-1. Chart Type: Table
-2. Columns to show:
-   - customer_segment (Text)
-   - customers (Number)
-   - avg_clv (Currency format)
-   - avg_orders (Number, 1 decimal)
-   - segment_total_revenue (Currency format)
-3. Table Settings:
-   - Sort by: avg_clv descending
-   - Conditional formatting: Green for VIP, Blue for Premium
-
-QUERY 3 - Product Category Performance:
-1. Chart Type: Bar Chart
-2. Data Section:
-   - X-axis: category_group (Dimension)
-   - Y-axis: total_revenue (Measure)
-3. Display Settings:
-   - Sort: Descending by total_revenue
-   - Show values on bars: Yes
-   - Color: Single color (blue)
-
-QUERY 4 - Weekly Order Trends:
-1. Chart Type: Bar Chart
-2. Data Section:
-   - X-axis: day_name (Dimension)
-   - Y-axis: order_count (Measure)
-3. Display Settings:
-   - Custom order: Monday to Sunday
-   - Color gradient: Light to dark blue
-   - Show data labels: Yes
-
-QUERY 5 - Payment Method Distribution:
-1. Chart Type: Pie Chart
-2. Data Section:
-   - Dimension: payment_type
-   - Measure: total_value
-3. Display Settings:
-   - Show percentages: Yes
-   - Show legend: Yes
-   - Donut style: Optional
-*/
-
--- ========================================
--- DASHBOARD SETUP INSTRUCTIONS:
--- ========================================
--- TAB 1 - EXECUTIVE OVERVIEW:
--- - Row 1: Monthly Growth Line Chart (full width)
--- - Row 2: Customer LTV Table + Product Performance Bubble
--- - Row 3: Quarterly Health Combo Chart (full width)
-
--- TAB 2 - OPERATIONAL EXCELLENCE:
--- - Row 1: Weekly Efficiency Area Chart (full width)
--- - Row 2: Payment Method Scatter + Retention Heatmap
--- - Row 3: Key operational metrics
-
--- TAB 3 - STRATEGIC INSIGHTS:
--- - Row 1: Market Opportunity Scatter (full width)
--- - Row 2: Seasonal Radar Chart + Competitive Gauges
--- - Row 3: Strategic recommendations summary
-
--- ========================================
--- ĐÁNH GIÁ CAPABILITIES:
--- ========================================
--- 1. STRATEGIC THINKING: Long-term business planning
--- 2. ADVANCED ANALYTICS: Multi-dimensional analysis
--- 3. BUSINESS ACUMEN: Market positioning insights
--- 4. OPERATIONAL EXCELLENCE: Process optimization
--- 5. CUSTOMER ANALYTICS: Retention & segmentation
--- 6. COMPETITIVE ANALYSIS: Benchmarking capabilities
--- 7. DATA STORYTELLING: Clear business narratives 

@@ -33,7 +33,7 @@ Dataset: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
    ```bash
    cd demo-data-generator
    mvn clean package
-   java -jar target/demo-data-generator-1.0.0.jar
+   mvn exec:java
    ```
 
 ## Access Points

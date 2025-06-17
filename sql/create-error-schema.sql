@@ -1,12 +1,6 @@
--- Create Error Database and Tables in StarRocks
--- Separate schema for data quality monitoring
--- Updated with PRIMARY KEY and is_deleted for soft delete functionality
-
--- Create Error Database
 CREATE DATABASE IF NOT EXISTS ecommerce_ods_error;
 USE ecommerce_ods_error;
 
--- Common Error Log Table (for all validation errors)
 CREATE TABLE IF NOT EXISTS ods_error_log (
     error_id VARCHAR(50) NOT NULL,
     table_name VARCHAR(50) NOT NULL,
@@ -29,7 +23,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Orders Error Table (failed validation orders)
 CREATE TABLE IF NOT EXISTS ods_orders_error (
     order_id VARCHAR(50) NOT NULL,
     error_timestamp DATETIME NOT NULL,
@@ -53,7 +46,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Order Items Error Table (failed validation order items)
 CREATE TABLE IF NOT EXISTS ods_order_items_error (
     order_id VARCHAR(50) NOT NULL,
     product_id VARCHAR(50),
@@ -75,7 +67,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Products Error Table (failed validation products)
 CREATE TABLE IF NOT EXISTS ods_products_error (
     product_id VARCHAR(50) NOT NULL,
     error_timestamp DATETIME NOT NULL,
@@ -95,7 +86,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Reviews Error Table (failed validation reviews)
 CREATE TABLE IF NOT EXISTS ods_reviews_error (
     order_id VARCHAR(50) NOT NULL,
     error_timestamp DATETIME NOT NULL,
@@ -115,7 +105,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Payments Error Table (failed validation payments)
 CREATE TABLE IF NOT EXISTS ods_payments_error (
     order_id VARCHAR(50) NOT NULL,
     payment_type VARCHAR(50),
@@ -136,7 +125,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Customers Error Table (failed validation customers)
 CREATE TABLE IF NOT EXISTS ods_customers_error (
     customer_id VARCHAR(50) NOT NULL,
     error_timestamp DATETIME NOT NULL,
@@ -158,5 +146,4 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Show created error tables
 SHOW TABLES; 
