@@ -1,8 +1,3 @@
--- =====================================================
--- VDT STAGE 1 - REAL-TIME MONITORING DASHBOARD (ULTRA SIMPLE)
--- =====================================================
--- 6 queries đã được đơn giản hóa tối đa để chắc chắn có data
-
 -- ========================================
 -- Query 1: Today's Key Performance Indicators (WORKING)
 -- ========================================

@@ -1,10 +1,7 @@
--- PostgreSQL Schema for Olist Brazilian E-Commerce Dataset
--- Enable logical replication
 ALTER SYSTEM SET wal_level = logical;
-ALTER SYSTEM SET max_replication_slots = 10;
-ALTER SYSTEM SET max_wal_senders = 10;
+ALTER SYSTEM SET max_replication_slots = 20;
+ALTER SYSTEM SET max_wal_senders = 20;
 
--- Create tables
 CREATE TABLE orders (
   "order_id" TEXT PRIMARY KEY,
   "customer_id" TEXT,
@@ -87,7 +84,6 @@ CREATE TABLE sellers (
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Add foreign keys
 ALTER TABLE orders ADD CONSTRAINT fk_orders_customer 
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id);
 
@@ -106,7 +102,6 @@ ALTER TABLE payments ADD CONSTRAINT fk_payments_order
 ALTER TABLE reviews ADD CONSTRAINT fk_reviews_order 
     FOREIGN KEY (order_id) REFERENCES orders(order_id);
 
--- Create indexes for better performance
 CREATE INDEX idx_orders_customer_id ON orders(customer_id);
 CREATE INDEX idx_orders_status ON orders(order_status);
 CREATE INDEX idx_orders_purchase_timestamp ON orders(order_purchase_timestamp);
@@ -115,10 +110,8 @@ CREATE INDEX idx_order_items_product_id ON order_items(product_id);
 CREATE INDEX idx_payments_order_id ON payments(order_id);
 CREATE INDEX idx_reviews_order_id ON reviews(order_id);
 
--- Create publication for logical replication
 CREATE PUBLICATION dbz_publication FOR ALL TABLES;
 
--- Create triggers for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -139,7 +132,6 @@ CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
 CREATE TRIGGER update_sellers_updated_at BEFORE UPDATE ON sellers
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Create replication slots for CDC (only for selected tables)
 SELECT pg_create_logical_replication_slot('orders_slot', 'pgoutput');
 SELECT pg_create_logical_replication_slot('order_items_slot', 'pgoutput');
 SELECT pg_create_logical_replication_slot('products_slot', 'pgoutput');

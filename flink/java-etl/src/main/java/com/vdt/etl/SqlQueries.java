@@ -1,18 +1,7 @@
 package com.vdt.etl;
 
-/**
- * SQL DDL Statements for Flink ETL
- * 
- * Contains all source and sink table definitions
- * Compatible with Java 11 (no text blocks)
- * Updated with soft delete support and primary key mode
- */
 public class SqlQueries {
-    
-    // =============================================================================
-    // SOURCE TABLES - Read from PostgreSQL CDC
-    // =============================================================================
-    
+    // Source tables
     public static final String CREATE_ORDERS_SOURCE = 
         "CREATE TABLE orders_source (" +
         "    order_id STRING," +
@@ -129,10 +118,6 @@ public class SqlQueries {
         "    'slot.name' = 'etl_customers_slot'," +
         "    'decoding.plugin.name' = 'pgoutput'" +
         ")";
-    
-    // =============================================================================
-    // CLEAN SINK TABLES - Write clean data to StarRocks
-    // =============================================================================
     
     public static final String CREATE_ORDERS_SINK = 
         "CREATE TABLE orders_sink (" +
@@ -294,10 +279,7 @@ public class SqlQueries {
         "    'sink.semantic' = 'exactly-once'" +
         ")";
     
-    // =============================================================================
     // ERROR SINK TABLES - Write invalid data to error tables
-    // =============================================================================
-    
     public static final String CREATE_ORDERS_ERROR_SINK = 
         "CREATE TABLE orders_error_sink (" +
         "    order_id STRING," +

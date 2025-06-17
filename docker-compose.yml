@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # PostgreSQL with CDC enabled
   postgres:
     image: postgres:15
     container_name: postgres-cdc
@@ -26,7 +23,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # StarRocks All-in-One
   starrocks:
     image: starrocks/allin1-ubuntu
     container_name: starrocks-allin1
@@ -48,7 +44,6 @@ services:
       timeout: 10s
       retries: 5
 
-  # Metabase for BI
   metabase:
     image: metabase/metabase:latest
     container_name: metabase

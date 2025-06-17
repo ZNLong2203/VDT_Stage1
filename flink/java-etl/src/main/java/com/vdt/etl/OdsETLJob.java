@@ -4,40 +4,24 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
-/**
- * Production-Optimized ODS ETL Job with Pure Flink SQL
- * 
- * Production-ready approach:
- * - Pure Flink SQL for maximum performance
- * - SQL optimizer can fully optimize the pipeline
- * - Minimal memory overhead
- * - Easy to maintain and scale
- * - Inline validation instead of custom functions for compatibility
- */
 public class OdsETLJob {
 
     public static void main(String[] args) throws Exception {
-        
-        // Setup Flink environment with production settings
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(4); // Production parallelism
-        
-        // Enable checkpointing for fault tolerance
-        env.enableCheckpointing(30000); // 30s checkpoint interval
+
+        env.setParallelism(4); 
+        env.enableCheckpointing(30000); 
         
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(
             env, EnvironmentSettings.newInstance().inStreamingMode().build()
         );
         
         System.out.println("=== Starting Production ODS ETL Job with Pure Flink SQL ===");
-        
-        // 1. Create source tables (PostgreSQL CDC)
+
         createSourceTables(tableEnv);
         
-        // 2. Create sink tables (StarRocks clean + error tables)
         createSinkTables(tableEnv);
         
-        // 3. Process each table with optimized SQL validation (inline validation)
         processOrdersWithSQL(tableEnv);
         processOrderItemsWithSQL(tableEnv);
         processProductsWithSQL(tableEnv);
@@ -45,9 +29,7 @@ public class OdsETLJob {
         processPaymentsWithSQL(tableEnv);
         processCustomersWithSQL(tableEnv);
         
-        // 4. Start the job
-        System.out.println("=== Production ETL Job Started - Pure SQL Processing ===");
-        env.execute("Production ODS ETL Job - Pure SQL");
+        System.out.println("=== Production ETL Job Completed - All SQL Pipelines Started ===");
     }
     
     private static void createSourceTables(StreamTableEnvironment tableEnv) {
@@ -60,7 +42,7 @@ public class OdsETLJob {
         tableEnv.executeSql(SqlQueries.CREATE_PAYMENTS_SOURCE);
         tableEnv.executeSql(SqlQueries.CREATE_CUSTOMERS_SOURCE);
         
-        System.out.println("✓ Source tables created");
+        System.out.println("Source tables created");
     }
     
     private static void createSinkTables(StreamTableEnvironment tableEnv) {
@@ -82,16 +64,12 @@ public class OdsETLJob {
         tableEnv.executeSql(SqlQueries.CREATE_PAYMENTS_ERROR_SINK);
         tableEnv.executeSql(SqlQueries.CREATE_CUSTOMERS_ERROR_SINK);
         
-        System.out.println("✓ Sink tables created");
+        System.out.println("Sink tables created");
     }
     
-    /**
-     * Process Orders with optimized SQL validation - using inline validation
-     */
     private static void processOrdersWithSQL(StreamTableEnvironment tableEnv) {
         System.out.println("Processing Orders with optimized SQL validation...");
         
-        // Single SQL statement for clean data with inline validation
         tableEnv.executeSql(
             "INSERT INTO orders_sink " +
             "SELECT " +
@@ -118,7 +96,6 @@ public class OdsETLJob {
             "  AND order_purchase_timestamp IS NOT NULL"
         );
         
-        // Single SQL statement for error data
         tableEnv.executeSql(
             "INSERT INTO orders_error_sink " +
             "SELECT " +
@@ -153,13 +130,9 @@ public class OdsETLJob {
         System.out.println("✓ Orders processing with SQL optimization completed");
     }
     
-    /**
-     * Process Order Items with optimized SQL validation - using inline validation
-     */
     private static void processOrderItemsWithSQL(StreamTableEnvironment tableEnv) {
         System.out.println("Processing Order Items with optimized SQL validation...");
         
-        // Clean data with inline SQL validation
         tableEnv.executeSql(
             "INSERT INTO order_items_sink " +
             "SELECT " +
@@ -189,7 +162,6 @@ public class OdsETLJob {
             "  AND freight_value <= 10000"
         );
         
-        // Error data
         tableEnv.executeSql(
             "INSERT INTO order_items_error_sink " +
             "SELECT " +
@@ -223,12 +195,9 @@ public class OdsETLJob {
             "      AND freight_value <= 10000)"
         );
         
-        System.out.println("✓ Order Items processing with SQL optimization completed");
+        System.out.println("Order Items processing with SQL optimization completed");
     }
     
-    /**
-     * Process Products with optimized SQL validation - using inline validation
-     */
     private static void processProductsWithSQL(StreamTableEnvironment tableEnv) {
         System.out.println("Processing Products with optimized SQL validation...");
         
@@ -277,7 +246,7 @@ public class OdsETLJob {
             "      AND CHAR_LENGTH(product_category_name) <= 100)"
         );
         
-        System.out.println("✓ Products processing with SQL optimization completed");
+        System.out.println("Products processing with SQL optimization completed");
     }
     
     private static void processReviewsWithSQL(StreamTableEnvironment tableEnv) {
@@ -330,7 +299,7 @@ public class OdsETLJob {
             "      AND review_score <= 5)"
         );
         
-        System.out.println("✓ Reviews processing with SQL optimization completed");
+        System.out.println("Reviews processing with SQL optimization completed");
     }
     
     private static void processPaymentsWithSQL(StreamTableEnvironment tableEnv) {
@@ -388,16 +357,12 @@ public class OdsETLJob {
             "      AND payment_value <= 50000)"
         );
         
-        System.out.println("✓ Payments processing with SQL optimization completed");
+        System.out.println("Payments processing with SQL optimization completed");
     }
     
-    /**
-     * Process Customers with optimized SQL validation - using inline validation
-     */
     private static void processCustomersWithSQL(StreamTableEnvironment tableEnv) {
         System.out.println("Processing Customers with optimized SQL validation...");
         
-        // Clean data with inline SQL validation and regional enrichment
         tableEnv.executeSql(
             "INSERT INTO customers_sink " +
             "SELECT " +
@@ -427,7 +392,6 @@ public class OdsETLJob {
             "  AND CHAR_LENGTH(customer_state) = 2"
         );
         
-        // Error data
         tableEnv.executeSql(
             "INSERT INTO customers_error_sink " +
             "SELECT " +
@@ -440,7 +404,7 @@ public class OdsETLJob {
             "        WHEN customer_id IS NULL OR CHAR_LENGTH(customer_id) > 50 THEN 'Invalid customer ID' " +
             "        WHEN customer_unique_id IS NULL OR CHAR_LENGTH(customer_unique_id) > 50 THEN 'Invalid customer unique ID' " +
             "        WHEN customer_city IS NULL OR CHAR_LENGTH(customer_city) > 100 THEN 'Invalid city name' " +
-            "        WHEN customer_state IS NULL OR CHAR_LENGTH(customer_state) != 2 THEN 'Invalid state code (must be 2 characters)' " +
+            "        WHEN customer_state IS NULL OR CHAR_LENGTH(customer_state) <> 2 THEN 'Invalid state code (must be 2 characters)' " +
             "        ELSE 'Unknown validation error' " +
             "    END as error_message, " +
             "    CURRENT_TIMESTAMP as error_timestamp, " +
@@ -459,35 +423,27 @@ public class OdsETLJob {
             "      AND CHAR_LENGTH(customer_state) = 2)"
         );
         
-        System.out.println("✓ Customers processing with SQL optimization completed");
+        System.out.println("Customers processing with SQL optimization completed");
     }
     
-    /**
-     * Production-ready utility methods using SQL for soft delete operations
-     * DataValidation.java is kept for utility/helper functions but not in main pipeline
-     */
     public static void softDeleteOrderSQL(StreamTableEnvironment tableEnv, String orderId) {
         System.out.println("Performing optimized soft delete for order: " + orderId);
         
-        if (DataValidation.validateSoftDeleteOperation(orderId, "orders", false).isValid()) {
+        if (orderId != null && orderId.trim().length() > 0 && orderId.length() <= 50) {
             tableEnv.executeSql(
                 "UPDATE orders_sink " +
                 "SET is_deleted = true, updated_at = CURRENT_TIMESTAMP " +
                 "WHERE order_id = '" + orderId + "'"
             );
-            System.out.println("✓ Soft delete completed for order: " + orderId);
+            System.out.println("Soft delete completed for order: " + orderId);
         } else {
-            System.err.println("✗ Soft delete validation failed for order: " + orderId);
+            System.err.println("Soft delete validation failed for order: " + orderId);
         }
     }
     
-    /**
-     * Create optimized analytics views
-     */
     public static void createOptimizedAnalyticsViews(StreamTableEnvironment tableEnv) {
         System.out.println("Creating optimized analytics views...");
         
-        // High-performance views with predicate pushdown
         tableEnv.executeSql(
             "CREATE VIEW active_orders_analytics AS " +
             "SELECT * FROM orders_sink " +
@@ -495,6 +451,6 @@ public class OdsETLJob {
             "  AND order_purchase_timestamp >= CURRENT_TIMESTAMP - INTERVAL '1' YEAR"
         );
         
-        System.out.println("✓ Optimized analytics views created");
+        System.out.println("Optimized analytics views created");
     }
 } 

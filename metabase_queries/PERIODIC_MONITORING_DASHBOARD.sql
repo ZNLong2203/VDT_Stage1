@@ -1,8 +1,3 @@
--- =====================================================
--- VDT STAGE 1 - PERIODIC MONITORING DASHBOARD (SIMPLIFIED)
--- =====================================================
--- 5 queries đã được đơn giản hóa tối đa để chắc chắn chạy được
-
 -- ========================================
 -- Query 1: Monthly Revenue Trends (SIMPLIFIED)
 -- ========================================
