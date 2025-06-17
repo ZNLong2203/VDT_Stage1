@@ -20,11 +20,11 @@ echo "StarRocks is ready!"
 
 # Setup StarRocks schema
 echo "Setting up StarRocks Clean Data schema..."
-mysql -h localhost -P 9030 -u root --protocol=TCP < sql/starrock-init/create-clean-schema.sql
+mysql -h localhost -P 9030 -u root --protocol=TCP < sql/starrocks-init/create-clean-schema.sql
 echo "StarRocks Clean Data schema created!"
 
 echo "Setting up StarRocks Error Data schema..."
-mysql -h localhost -P 9030 -u root --protocol=TCP < sql/starrock-init/create-error-schema.sql
+mysql -h localhost -P 9030 -u root --protocol=TCP < sql/starrocks-init/create-error-schema.sql
 echo "StarRocks Error Data schema created!"
 
 # Show data summary

@@ -102,25 +102,9 @@ WHERE is_deleted = false
 
 -- CHART SETUP: Number Card showing cancellation_rate_percent
 
--- ========================================
--- Query 6: Error Data Quality Overview
--- ========================================
--- Monitor data quality issues in the pipeline
-SELECT 
-    table_name,
-    error_type,
-    COUNT(*) as error_count
-FROM ecommerce_ods_error.ods_error_log 
-WHERE error_timestamp >= CURDATE() - INTERVAL 1 DAY
-  AND is_deleted = false
-GROUP BY table_name, error_type
-ORDER BY error_count DESC
-LIMIT 10;
-
--- CHART SETUP: Table showing top data quality issues
 
 -- ========================================
--- Query 7: Order Status Distribution
+-- Query 6: Order Status Distribution
 -- ========================================
 -- Overview of order pipeline health
 SELECT 
@@ -134,59 +118,3 @@ GROUP BY order_status
 ORDER BY order_count DESC;
 
 -- CHART SETUP: Pie Chart - showing order status distribution
-
--- ========================================
--- Query 8: Payment Success Rate
--- ========================================
--- Monitor payment processing health
-SELECT 
-    'Payment Success Rate' as metric,
-    COUNT(CASE WHEN o.order_status IN ('processing', 'shipped', 'delivered') THEN 1 END) as successful_payments,
-    COUNT(*) as total_orders,
-    ROUND(
-        COUNT(CASE WHEN o.order_status IN ('processing', 'shipped', 'delivered') THEN 1 END) * 100.0 / 
-        NULLIF(COUNT(*), 0), 
-        2
-    ) as payment_success_rate_percent
-FROM ecommerce_ods_clean.ods_orders o
-JOIN ecommerce_ods_clean.ods_payments p ON o.order_id = p.order_id
-WHERE o.is_deleted = false 
-  AND p.is_deleted = false
-  AND o.order_purchase_timestamp >= CURDATE() - INTERVAL 7 DAY;
-
--- CHART SETUP: Number Card showing payment_success_rate_percent
-
--- ========================================
--- SETUP INSTRUCTIONS FOR METABASE
--- ========================================
-
-/*
-DASHBOARD LAYOUT RECOMMENDATIONS:
-
-ROW 1 - KEY METRICS (Number Cards):
-- Daily Orders (latest day)
-- Daily Revenue (latest day)  
-- Cancellation Rate %
-- Late Delivery Rate %
-
-ROW 2 - TRENDS (Line Charts):
-- Daily Orders Count (7 days)
-- Daily Revenue (7 days)
-
-ROW 3 - ANALYSIS:
-- Top 5 Products (Bar Chart)
-- Order Status Distribution (Pie Chart)
-
-ROW 4 - OPERATIONS:
-- Data Quality Issues (Table)
-- Payment Success Rate (Number Card)
-
-AUTO-REFRESH SETTINGS:
-- Set dashboard to refresh every 5 minutes
-- Use filters for date ranges if needed
-
-ALERT SETUP:
-- Cancellation Rate > 10%: Warning
-- Late Delivery Rate > 15%: Warning  
-- Payment Success Rate < 95%: Critical
-*/ 

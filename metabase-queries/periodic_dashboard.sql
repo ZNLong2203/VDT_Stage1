@@ -1,29 +1,5 @@
 -- ========================================
--- Query 1: Monthly Revenue Trends 
--- ========================================
-SELECT 
-    YEAR(o.order_purchase_timestamp) as year,
-    MONTH(o.order_purchase_timestamp) as month,
-    CONCAT(YEAR(o.order_purchase_timestamp), '-', 
-           LPAD(MONTH(o.order_purchase_timestamp), 2, '0')) as year_month,
-    COUNT(o.order_id) as total_orders,
-    ROUND(SUM(p.payment_value), 2) as total_revenue,
-    COUNT(DISTINCT o.customer_id) as unique_customers
-FROM ods_orders o
-JOIN ods_payments p ON o.order_id = p.order_id
-WHERE o.is_deleted = false 
-    AND p.is_deleted = false
-GROUP BY YEAR(o.order_purchase_timestamp), MONTH(o.order_purchase_timestamp)
-ORDER BY year, month;
-
--- CHART SETUP:
--- Chart Type: Line Chart
--- X-axis: year_month 
--- Y-axis: total_revenue (primary), total_orders (secondary)
--- Title: "Monthly Revenue & Orders Trend"
-
--- ========================================
--- Query 2: Customer Lifetime Value Segmentation 
+-- Query 1: Customer Lifetime Value Segmentation 
 -- ========================================
 SELECT 
     customer_segment,
@@ -57,7 +33,7 @@ ORDER BY avg_clv DESC;
 -- Title: "Customer Segmentation by Lifetime Value"
 
 -- ========================================
--- Query 3: Product Category Performance 
+-- Query 2: Product Category Performance 
 -- ========================================
 SELECT 
     p.category_group,
@@ -79,7 +55,7 @@ ORDER BY total_revenue DESC;
 -- Title: "Revenue by Product Category"
 
 -- ========================================
--- Query 4: Weekly Order Trends 
+-- Query 3: Weekly Order Trends 
 -- ========================================
 SELECT 
     DAYOFWEEK(o.order_purchase_timestamp) as day_of_week,
@@ -108,7 +84,7 @@ ORDER BY day_of_week;
 -- Title: "Orders by Day of Week"
 
 -- ========================================
--- Query 5: Payment Method Distribution 
+-- Query 4: Payment Method Distribution 
 -- ========================================
 SELECT 
     payment_type,

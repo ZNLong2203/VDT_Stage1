@@ -1,12 +1,6 @@
--- Create ODS Clean Database and Tables in StarRocks
--- These tables store cleaned and enriched data from ODS Raw
--- Updated with PRIMARY KEY and is_deleted for soft delete functionality
-
--- Create ODS Clean Database
 CREATE DATABASE IF NOT EXISTS ecommerce_ods_clean;
 USE ecommerce_ods_clean;
 
--- Orders Clean Table (enriched with business metrics)
 CREATE TABLE IF NOT EXISTS ods_orders (
     order_id VARCHAR(50) NOT NULL,
     customer_id VARCHAR(50) NOT NULL,
@@ -31,7 +25,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Order Items Clean Table (enriched with pricing metrics)
 CREATE TABLE IF NOT EXISTS ods_order_items (
     order_id VARCHAR(50) NOT NULL,
     product_id VARCHAR(50) NOT NULL,
@@ -51,7 +44,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Products Clean Table (enriched with category grouping)
 CREATE TABLE IF NOT EXISTS ods_products (
     product_id VARCHAR(50) NOT NULL,
     product_category_name VARCHAR(100) NOT NULL,
@@ -68,7 +60,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Reviews Clean Table (enriched with sentiment analysis)
 CREATE TABLE IF NOT EXISTS ods_reviews (
     order_id VARCHAR(50) NOT NULL,
     review_score INT NOT NULL,
@@ -86,7 +77,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Payments Clean Table (enriched with payment categorization)
 CREATE TABLE IF NOT EXISTS ods_payments (
     order_id VARCHAR(50) NOT NULL,
     payment_type VARCHAR(20) NOT NULL,
@@ -105,7 +95,6 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Customers Clean Table (enriched with geographical analysis)
 CREATE TABLE IF NOT EXISTS ods_customers (
     customer_id VARCHAR(50) NOT NULL,
     customer_unique_id VARCHAR(50) NOT NULL,
