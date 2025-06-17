@@ -55,6 +55,13 @@ INSERT INTO reviews (review_id, order_id, review_score)
 VALUES ('test_review_${TIMESTAMP}', 'test_order_${TIMESTAMP}', 4);
 "
 
+# Insert valid customer
+echo "📝 Inserting valid customer into PostgreSQL..."
+PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d ecommerce -c "
+INSERT INTO customers (customer_id, customer_unique_id, customer_city, customer_state) 
+VALUES ('test_customer_${TIMESTAMP}', 'unique_test_${TIMESTAMP}', 'São Paulo', 'SP');
+"
+
 echo "⏳ Waiting for CDC + ETL to process valid data (15 seconds)..."
 sleep 15
 
@@ -97,6 +104,13 @@ echo "📝 Inserting invalid review (score = 10, should be 1-5)..."
 PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d ecommerce -c "
 INSERT INTO reviews (review_id, order_id, review_score) 
 VALUES ('invalid_review_${TIMESTAMP}', 'invalid_order_${TIMESTAMP}', 10);
+"
+
+# Insert invalid customer (invalid state code)
+echo "📝 Inserting invalid customer (invalid state code)..."
+PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d ecommerce -c "
+INSERT INTO customers (customer_id, customer_unique_id, customer_city, customer_state) 
+VALUES ('invalid_customer_${TIMESTAMP}', 'unique_invalid_${TIMESTAMP}', 'Test City', 'INVALID_STATE');
 "
 
 echo "⏳ Waiting for CDC + ETL to process invalid data (15 seconds)..."
@@ -153,6 +167,15 @@ FROM ods_reviews
 WHERE order_id = 'test_order_${TIMESTAMP}';
 "
 
+# Check customers
+echo "📊 Testing Customers ETL (regional analysis):"
+mysql -h 127.0.0.1 -P 9030 -u root -e "
+USE ecommerce_ods_clean; 
+SELECT customer_id, customer_city, customer_state, state_region 
+FROM ods_customers 
+WHERE customer_id = 'test_customer_${TIMESTAMP}';
+"
+
 # ===========================================================================
 # VERIFY ERROR DATA
 # ===========================================================================
@@ -204,6 +227,14 @@ FROM ods_reviews_error
 WHERE order_id = 'invalid_order_${TIMESTAMP}';
 "
 
+echo "📊 Testing Customers Error Table:"
+mysql -h 127.0.0.1 -P 9030 -u root -e "
+USE ecommerce_ods_error; 
+SELECT customer_id, customer_state, error_type, error_message 
+FROM ods_customers_error 
+WHERE customer_id = 'invalid_customer_${TIMESTAMP}';
+"
+
 # ===========================================================================
 # VALIDATION SUMMARY
 # ===========================================================================
@@ -217,12 +248,14 @@ TEST_ORDERS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_cle
 TEST_ORDER_ITEMS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_clean; SELECT COUNT(*) FROM ods_order_items WHERE order_id = 'test_order_${TIMESTAMP}';")
 TEST_PAYMENTS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_clean; SELECT COUNT(*) FROM ods_payments WHERE order_id = 'test_order_${TIMESTAMP}';")
 TEST_REVIEWS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_clean; SELECT COUNT(*) FROM ods_reviews WHERE order_id = 'test_order_${TIMESTAMP}';")
+TEST_CUSTOMERS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_clean; SELECT COUNT(*) FROM ods_customers WHERE customer_id = 'test_customer_${TIMESTAMP}';")
 
 # Count error records
 ERROR_ORDERS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_error; SELECT COUNT(*) FROM ods_orders_error WHERE order_id = 'invalid_order_${TIMESTAMP}';")
 ERROR_ORDER_ITEMS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_error; SELECT COUNT(*) FROM ods_order_items_error WHERE order_id = 'invalid_order_${TIMESTAMP}';")
 ERROR_PAYMENTS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_error; SELECT COUNT(*) FROM ods_payments_error WHERE order_id = 'invalid_order_${TIMESTAMP}';")
 ERROR_REVIEWS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_error; SELECT COUNT(*) FROM ods_reviews_error WHERE order_id = 'invalid_order_${TIMESTAMP}';")
+ERROR_CUSTOMERS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_error; SELECT COUNT(*) FROM ods_customers_error WHERE customer_id = 'invalid_customer_${TIMESTAMP}';")
 
 # Check transformation results
 PRODUCT_CATEGORY=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_clean; SELECT category_group FROM ods_products WHERE product_id = 'test_product_${TIMESTAMP}';")
@@ -230,9 +263,10 @@ ORDER_STATUS=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_cl
 PRICE_CATEGORY=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_clean; SELECT price_category FROM ods_order_items WHERE order_id = 'test_order_${TIMESTAMP}';")
 PAYMENT_CATEGORY=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_clean; SELECT payment_category FROM ods_payments WHERE order_id = 'test_order_${TIMESTAMP}';")
 REVIEW_CATEGORY=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_clean; SELECT review_category FROM ods_reviews WHERE order_id = 'test_order_${TIMESTAMP}';")
+CUSTOMER_REGION=$(mysql -h 127.0.0.1 -P 9030 -u root -s -N -e "USE ecommerce_ods_clean; SELECT state_region FROM ods_customers WHERE customer_id = 'test_customer_${TIMESTAMP}';")
 
-echo "✅ VALID Records found: Products($TEST_PRODUCTS), Orders($TEST_ORDERS), Order Items($TEST_ORDER_ITEMS), Payments($TEST_PAYMENTS), Reviews($TEST_REVIEWS)"
-echo "❌ ERROR Records found: Orders($ERROR_ORDERS), Order Items($ERROR_ORDER_ITEMS), Payments($ERROR_PAYMENTS), Reviews($ERROR_REVIEWS)"
+echo "✅ VALID Records found: Products($TEST_PRODUCTS), Orders($TEST_ORDERS), Order Items($TEST_ORDER_ITEMS), Payments($TEST_PAYMENTS), Reviews($TEST_REVIEWS), Customers($TEST_CUSTOMERS)"
+echo "❌ ERROR Records found: Orders($ERROR_ORDERS), Order Items($ERROR_ORDER_ITEMS), Payments($ERROR_PAYMENTS), Reviews($ERROR_REVIEWS), Customers($ERROR_CUSTOMERS)"
 
 echo ""
 echo "✅ Transformations applied to valid data:"
@@ -241,12 +275,13 @@ echo "   📋 Order status: processing → $ORDER_STATUS"
 echo "   💰 Price category: 175.50 → $PRICE_CATEGORY"
 echo "   💳 Payment category: credit_card → $PAYMENT_CATEGORY"
 echo "   ⭐ Review category: score 4 → $REVIEW_CATEGORY"
+echo "   🏠 Customer region: SP → $CUSTOMER_REGION"
 
 # Overall test result
-TOTAL_VALID_EXPECTED=5
-TOTAL_ERROR_EXPECTED=4
-ACTUAL_VALID_TOTAL=$((TEST_PRODUCTS + TEST_ORDERS + TEST_ORDER_ITEMS + TEST_PAYMENTS + TEST_REVIEWS))
-ACTUAL_ERROR_TOTAL=$((ERROR_ORDERS + ERROR_ORDER_ITEMS + ERROR_PAYMENTS + ERROR_REVIEWS))
+TOTAL_VALID_EXPECTED=6
+TOTAL_ERROR_EXPECTED=5
+ACTUAL_VALID_TOTAL=$((TEST_PRODUCTS + TEST_ORDERS + TEST_ORDER_ITEMS + TEST_PAYMENTS + TEST_REVIEWS + TEST_CUSTOMERS))
+ACTUAL_ERROR_TOTAL=$((ERROR_ORDERS + ERROR_ORDER_ITEMS + ERROR_PAYMENTS + ERROR_REVIEWS + ERROR_CUSTOMERS))
 
 echo ""
 if [ "$ACTUAL_VALID_TOTAL" -eq "$TOTAL_VALID_EXPECTED" ] && [ "$ACTUAL_ERROR_TOTAL" -ge 2 ]; then

@@ -136,5 +136,27 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
+-- Customers Error Table (failed validation customers)
+CREATE TABLE IF NOT EXISTS ods_customers_error (
+    customer_id VARCHAR(50) NOT NULL,
+    error_timestamp DATETIME NOT NULL,
+    customer_unique_id VARCHAR(50),
+    customer_city VARCHAR(100),
+    customer_state VARCHAR(10),
+    error_type VARCHAR(50) NOT NULL,
+    error_message VARCHAR(500) NOT NULL,
+    raw_data JSON,
+    is_deleted BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+PRIMARY KEY (customer_id, error_timestamp)
+DISTRIBUTED BY HASH(customer_id) BUCKETS 10
+PROPERTIES (
+    "replication_num" = "1",
+    "enable_persistent_index" = "true",
+    "compression" = "LZ4"
+);
+
 -- Show created error tables
 SHOW TABLES; 

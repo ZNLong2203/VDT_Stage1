@@ -43,6 +43,7 @@ public class OdsETLJob {
         processProductsWithSQL(tableEnv);
         processReviewsWithSQL(tableEnv);
         processPaymentsWithSQL(tableEnv);
+        processCustomersWithSQL(tableEnv);
         
         // 4. Start the job
         System.out.println("=== Production ETL Job Started - Pure SQL Processing ===");
@@ -57,6 +58,7 @@ public class OdsETLJob {
         tableEnv.executeSql(SqlQueries.CREATE_PRODUCTS_SOURCE);
         tableEnv.executeSql(SqlQueries.CREATE_REVIEWS_SOURCE);
         tableEnv.executeSql(SqlQueries.CREATE_PAYMENTS_SOURCE);
+        tableEnv.executeSql(SqlQueries.CREATE_CUSTOMERS_SOURCE);
         
         System.out.println("✓ Source tables created");
     }
@@ -70,6 +72,7 @@ public class OdsETLJob {
         tableEnv.executeSql(SqlQueries.CREATE_PRODUCTS_SINK);
         tableEnv.executeSql(SqlQueries.CREATE_REVIEWS_SINK);
         tableEnv.executeSql(SqlQueries.CREATE_PAYMENTS_SINK);
+        tableEnv.executeSql(SqlQueries.CREATE_CUSTOMERS_SINK);
         
         // Error data sinks
         tableEnv.executeSql(SqlQueries.CREATE_ORDERS_ERROR_SINK);
@@ -77,6 +80,7 @@ public class OdsETLJob {
         tableEnv.executeSql(SqlQueries.CREATE_PRODUCTS_ERROR_SINK);
         tableEnv.executeSql(SqlQueries.CREATE_REVIEWS_ERROR_SINK);
         tableEnv.executeSql(SqlQueries.CREATE_PAYMENTS_ERROR_SINK);
+        tableEnv.executeSql(SqlQueries.CREATE_CUSTOMERS_ERROR_SINK);
         
         System.out.println("✓ Sink tables created");
     }
@@ -385,6 +389,77 @@ public class OdsETLJob {
         );
         
         System.out.println("✓ Payments processing with SQL optimization completed");
+    }
+    
+    /**
+     * Process Customers with optimized SQL validation - using inline validation
+     */
+    private static void processCustomersWithSQL(StreamTableEnvironment tableEnv) {
+        System.out.println("Processing Customers with optimized SQL validation...");
+        
+        // Clean data with inline SQL validation and regional enrichment
+        tableEnv.executeSql(
+            "INSERT INTO customers_sink " +
+            "SELECT " +
+            "    customer_id, " +
+            "    customer_unique_id, " +
+            "    customer_city, " +
+            "    customer_state, " +
+            "    CASE " +
+            "        WHEN customer_state IN ('SP', 'RJ', 'MG') THEN 'Southeast' " +
+            "        WHEN customer_state IN ('RS', 'SC', 'PR') THEN 'South' " +
+            "        WHEN customer_state IN ('GO', 'MT', 'MS', 'DF') THEN 'Center-West' " +
+            "        WHEN customer_state IN ('BA', 'SE', 'AL', 'PE', 'PB', 'RN', 'CE', 'PI', 'MA') THEN 'Northeast' " +
+            "        WHEN customer_state IN ('AM', 'RR', 'AP', 'PA', 'TO', 'RO', 'AC') THEN 'North' " +
+            "        ELSE 'Unknown' " +
+            "    END as state_region, " +
+            "    false as is_deleted, " +
+            "    CURRENT_TIMESTAMP as created_at, " +
+            "    CURRENT_TIMESTAMP as updated_at " +
+            "FROM customers_source " +
+            "WHERE customer_id IS NOT NULL " +
+            "  AND CHAR_LENGTH(customer_id) <= 50 " +
+            "  AND customer_unique_id IS NOT NULL " +
+            "  AND CHAR_LENGTH(customer_unique_id) <= 50 " +
+            "  AND customer_city IS NOT NULL " +
+            "  AND CHAR_LENGTH(customer_city) <= 100 " +
+            "  AND customer_state IS NOT NULL " +
+            "  AND CHAR_LENGTH(customer_state) = 2"
+        );
+        
+        // Error data
+        tableEnv.executeSql(
+            "INSERT INTO customers_error_sink " +
+            "SELECT " +
+            "    customer_id, " +
+            "    customer_unique_id, " +
+            "    customer_city, " +
+            "    customer_state, " +
+            "    'VALIDATION_ERROR' as error_type, " +
+            "    CASE " +
+            "        WHEN customer_id IS NULL OR CHAR_LENGTH(customer_id) > 50 THEN 'Invalid customer ID' " +
+            "        WHEN customer_unique_id IS NULL OR CHAR_LENGTH(customer_unique_id) > 50 THEN 'Invalid customer unique ID' " +
+            "        WHEN customer_city IS NULL OR CHAR_LENGTH(customer_city) > 100 THEN 'Invalid city name' " +
+            "        WHEN customer_state IS NULL OR CHAR_LENGTH(customer_state) != 2 THEN 'Invalid state code (must be 2 characters)' " +
+            "        ELSE 'Unknown validation error' " +
+            "    END as error_message, " +
+            "    CURRENT_TIMESTAMP as error_timestamp, " +
+            "    CONCAT('{\"customer_id\":\"', COALESCE(customer_id, 'null'), '\"}') as raw_data, " +
+            "    false as is_deleted, " +
+            "    CURRENT_TIMESTAMP as created_at, " +
+            "    CURRENT_TIMESTAMP as updated_at " +
+            "FROM customers_source " +
+            "WHERE NOT (customer_id IS NOT NULL " +
+            "      AND CHAR_LENGTH(customer_id) <= 50 " +
+            "      AND customer_unique_id IS NOT NULL " +
+            "      AND CHAR_LENGTH(customer_unique_id) <= 50 " +
+            "      AND customer_city IS NOT NULL " +
+            "      AND CHAR_LENGTH(customer_city) <= 100 " +
+            "      AND customer_state IS NOT NULL " +
+            "      AND CHAR_LENGTH(customer_state) = 2)"
+        );
+        
+        System.out.println("✓ Customers processing with SQL optimization completed");
     }
     
     /**

@@ -110,6 +110,26 @@ public class SqlQueries {
         "    'decoding.plugin.name' = 'pgoutput'" +
         ")";
     
+    public static final String CREATE_CUSTOMERS_SOURCE = 
+        "CREATE TABLE customers_source (" +
+        "    customer_id STRING," +
+        "    customer_unique_id STRING," +
+        "    customer_city STRING," +
+        "    customer_state STRING," +
+        "    PRIMARY KEY (customer_id) NOT ENFORCED" +
+        ") WITH (" +
+        "    'connector' = 'postgres-cdc'," +
+        "    'hostname' = 'localhost'," +
+        "    'port' = '5432'," +
+        "    'username' = 'postgres'," +
+        "    'password' = 'postgres'," +
+        "    'database-name' = 'ecommerce'," +
+        "    'schema-name' = 'public'," +
+        "    'table-name' = 'customers'," +
+        "    'slot.name' = 'etl_customers_slot'," +
+        "    'decoding.plugin.name' = 'pgoutput'" +
+        ")";
+    
     // =============================================================================
     // CLEAN SINK TABLES - Write clean data to StarRocks
     // =============================================================================
@@ -241,6 +261,32 @@ public class SqlQueries {
         "    'password' = ''," +
         "    'database-name' = 'ecommerce_ods_clean'," +
         "    'table-name' = 'ods_payments'," +
+        "    'sink.properties.format' = 'json'," +
+        "    'sink.properties.strip_outer_array' = 'true'," +
+        "    'sink.buffer-flush.max-rows' = '64000'," +
+        "    'sink.buffer-flush.interval-ms' = '5000'," +
+        "    'sink.semantic' = 'exactly-once'" +
+        ")";
+    
+    public static final String CREATE_CUSTOMERS_SINK = 
+        "CREATE TABLE customers_sink (" +
+        "    customer_id STRING," +
+        "    customer_unique_id STRING," +
+        "    customer_city STRING," +
+        "    customer_state STRING," +
+        "    state_region STRING," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
+        "    PRIMARY KEY (customer_id) NOT ENFORCED" +
+        ") WITH (" +
+        "    'connector' = 'starrocks'," +
+        "    'jdbc-url' = 'jdbc:mysql://localhost:9030'," +
+        "    'load-url' = 'localhost:8030'," +
+        "    'username' = 'root'," +
+        "    'password' = ''," +
+        "    'database-name' = 'ecommerce_ods_clean'," +
+        "    'table-name' = 'ods_customers'," +
         "    'sink.properties.format' = 'json'," +
         "    'sink.properties.strip_outer_array' = 'true'," +
         "    'sink.buffer-flush.max-rows' = '64000'," +
@@ -383,6 +429,34 @@ public class SqlQueries {
         "    'password' = ''," +
         "    'database-name' = 'ecommerce_ods_error'," +
         "    'table-name' = 'ods_payments_error'," +
+        "    'sink.properties.format' = 'json'," +
+        "    'sink.properties.strip_outer_array' = 'true'," +
+        "    'sink.buffer-flush.max-rows' = '64000'," +
+        "    'sink.buffer-flush.interval-ms' = '5000'" +
+        ")";
+    
+    public static final String CREATE_CUSTOMERS_ERROR_SINK = 
+        "CREATE TABLE customers_error_sink (" +
+        "    customer_id STRING," +
+        "    customer_unique_id STRING," +
+        "    customer_city STRING," +
+        "    customer_state STRING," +
+        "    error_type STRING," +
+        "    error_message STRING," +
+        "    error_timestamp TIMESTAMP(3)," +
+        "    raw_data STRING," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
+        "    PRIMARY KEY (customer_id, error_timestamp) NOT ENFORCED" +
+        ") WITH (" +
+        "    'connector' = 'starrocks'," +
+        "    'jdbc-url' = 'jdbc:mysql://localhost:9030'," +
+        "    'load-url' = 'localhost:8030'," +
+        "    'username' = 'root'," +
+        "    'password' = ''," +
+        "    'database-name' = 'ecommerce_ods_error'," +
+        "    'table-name' = 'ods_customers_error'," +
         "    'sink.properties.format' = 'json'," +
         "    'sink.properties.strip_outer_array' = 'true'," +
         "    'sink.buffer-flush.max-rows' = '64000'," +

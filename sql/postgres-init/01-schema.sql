@@ -144,4 +144,5 @@ SELECT pg_create_logical_replication_slot('orders_slot', 'pgoutput');
 SELECT pg_create_logical_replication_slot('order_items_slot', 'pgoutput');
 SELECT pg_create_logical_replication_slot('products_slot', 'pgoutput');
 SELECT pg_create_logical_replication_slot('reviews_slot', 'pgoutput');
-SELECT pg_create_logical_replication_slot('payments_slot', 'pgoutput'); 
+SELECT pg_create_logical_replication_slot('payments_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('customers_slot', 'pgoutput'); 

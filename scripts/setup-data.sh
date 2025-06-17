@@ -43,7 +43,7 @@ echo "✅ StarRocks Error Data schema created!"
 # SELECT pg_create_logical_replication_slot('reviews_slot', 'pgoutput');
 # SELECT pg_create_logical_replication_slot('payments_slot', 'pgoutput');
 # "
-echo "✅ Replication slots created for 5 selected tables!"
+echo "✅ Replication slots created for 6 selected tables!"
 
 # Show data summary
 echo ""
@@ -61,7 +61,7 @@ ORDER BY table_name;
 "
 
 echo ""
-echo "📋 CDC will stream 5 selected tables: orders, order_items, products, reviews, payments"
+echo "📋 CDC will stream 6 selected tables: orders, order_items, products, reviews, payments, customers"
 
 echo ""
 echo "🎉 Data pipeline setup completed!"

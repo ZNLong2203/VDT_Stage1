@@ -105,6 +105,25 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
+-- Customers Clean Table (enriched with geographical analysis)
+CREATE TABLE IF NOT EXISTS ods_customers (
+    customer_id VARCHAR(50) NOT NULL,
+    customer_unique_id VARCHAR(50) NOT NULL,
+    customer_city VARCHAR(100) NOT NULL,
+    customer_state VARCHAR(10) NOT NULL,
+    state_region VARCHAR(20) NOT NULL,
+    is_deleted BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+PRIMARY KEY (customer_id)
+DISTRIBUTED BY HASH(customer_id) BUCKETS 10
+PROPERTIES (
+    "replication_num" = "1",
+    "enable_persistent_index" = "true",
+    "compression" = "LZ4"
+);
+
 -- Show created clean data tables
 SHOW TABLES;
 
@@ -114,3 +133,4 @@ DESCRIBE ods_order_items;
 DESCRIBE ods_products;
 DESCRIBE ods_reviews;
 DESCRIBE ods_payments;
+DESCRIBE ods_customers;
