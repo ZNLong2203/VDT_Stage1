@@ -21,7 +21,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
-          <mainClass>com.vdt.demo.RealTimeDataGenerator</mainClass>
+          <mainClass>com.vdt.demo.DataGenerator</mainClass>
         </configuration>
       </plugin>
       <plugin>
@@ -36,7 +36,7 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <mainClass>com.vdt.demo.RealTimeDataGenerator</mainClass>
+                  <mainClass>com.vdt.demo.DataGenerator</mainClass>
                 </transformer>
               </transformers>
             </configuration>

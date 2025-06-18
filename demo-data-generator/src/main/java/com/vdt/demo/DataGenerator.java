@@ -10,7 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class RealTimeDataGenerator {
+public class DataGenerator {
     
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/ecommerce";
     private static final String DB_USER = "postgres";
