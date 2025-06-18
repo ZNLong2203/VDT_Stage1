@@ -3,9 +3,9 @@ ALTER SYSTEM SET max_replication_slots = 20;
 ALTER SYSTEM SET max_wal_senders = 20;
 
 CREATE TABLE orders (
-  "order_id" TEXT PRIMARY KEY,
-  "customer_id" TEXT,
-  "order_status" TEXT,
+  "order_id" VARCHAR(50) PRIMARY KEY,
+  "customer_id" VARCHAR(50),
+  "order_status" VARCHAR(20),
   "order_purchase_timestamp" TIMESTAMP,
   "order_approved_at" TIMESTAMP,
   "order_delivered_carrier_date" TIMESTAMP,
@@ -16,21 +16,21 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE customers (
-  "customer_id" TEXT PRIMARY KEY,
-  "customer_unique_id" TEXT,
-  "customer_zip_code_prefix" TEXT,
-  "customer_city" TEXT,
-  "customer_state" TEXT,
+  "customer_id" VARCHAR(50) PRIMARY KEY,
+  "customer_unique_id" VARCHAR(50),
+  "customer_zip_code_prefix" VARCHAR(10),
+  "customer_city" VARCHAR(100),
+  "customer_state" VARCHAR(10),
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE order_items (
   "id" SERIAL PRIMARY KEY,
-  "order_id" TEXT,
+  "order_id" VARCHAR(50),
   "order_item_id" INTEGER,
-  "product_id" TEXT,
-  "seller_id" TEXT,
+  "product_id" VARCHAR(50),
+  "seller_id" VARCHAR(50),
   "shipping_limit_date" TIMESTAMP,
   "price" DOUBLE PRECISION,
   "freight_value" DOUBLE PRECISION,
@@ -40,9 +40,9 @@ CREATE TABLE order_items (
 
 CREATE TABLE payments (
   "id" SERIAL PRIMARY KEY,
-  "order_id" TEXT,
+  "order_id" VARCHAR(50),
   "payment_sequential" INTEGER,
-  "payment_type" TEXT,
+  "payment_type" VARCHAR(20),
   "payment_installments" INTEGER,
   "payment_value" DOUBLE PRECISION,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -50,10 +50,10 @@ CREATE TABLE payments (
 );
 
 CREATE TABLE reviews (
-  "review_id" TEXT PRIMARY KEY,
-  "order_id" TEXT,
+  "review_id" VARCHAR(50) PRIMARY KEY,
+  "order_id" VARCHAR(50),
   "review_score" INTEGER,
-  "review_comment_title" TEXT,
+  "review_comment_title" VARCHAR(500),
   "review_comment_message" TEXT,
   "review_creation_date" TIMESTAMP,
   "review_answer_timestamp" TIMESTAMP,
@@ -62,8 +62,8 @@ CREATE TABLE reviews (
 );
 
 CREATE TABLE products (
-  "product_id" TEXT PRIMARY KEY,
-  "product_category_name" TEXT,
+  "product_id" VARCHAR(50) PRIMARY KEY,
+  "product_category_name" VARCHAR(100),
   "product_name_lenght" INTEGER,
   "product_description_lenght" INTEGER,
   "product_photos_qty" INTEGER,
@@ -76,10 +76,10 @@ CREATE TABLE products (
 );
 
 CREATE TABLE sellers (
-  "seller_id" TEXT PRIMARY KEY,
-  "seller_zip_code_prefix" TEXT,
-  "seller_city" TEXT,
-  "seller_state" TEXT,
+  "seller_id" VARCHAR(50) PRIMARY KEY,
+  "seller_zip_code_prefix" VARCHAR(10),
+  "seller_city" VARCHAR(100),
+  "seller_state" VARCHAR(10),
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -132,9 +132,9 @@ CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
 CREATE TRIGGER update_sellers_updated_at BEFORE UPDATE ON sellers
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-SELECT pg_create_logical_replication_slot('orders_slot', 'pgoutput');
-SELECT pg_create_logical_replication_slot('order_items_slot', 'pgoutput');
-SELECT pg_create_logical_replication_slot('products_slot', 'pgoutput');
-SELECT pg_create_logical_replication_slot('reviews_slot', 'pgoutput');
-SELECT pg_create_logical_replication_slot('payments_slot', 'pgoutput');
-SELECT pg_create_logical_replication_slot('customers_slot', 'pgoutput'); 
+SELECT pg_create_logical_replication_slot('etl_orders_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('etl_order_items_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('etl_products_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('etl_reviews_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('etl_payments_slot', 'pgoutput');
+SELECT pg_create_logical_replication_slot('etl_customers_slot', 'pgoutput'); 

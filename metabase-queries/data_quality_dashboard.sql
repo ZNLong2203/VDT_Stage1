@@ -1,9 +1,3 @@
--- ===================================================================
--- CHART 1: Daily Error Count 
--- ===================================================================
--- Shows error trends from ALL error tables - will show 0 if no errors
--- Use as LINE CHART in Metabase
-
 SELECT 
     error_date,
     SUM(error_count) as total_errors
@@ -68,12 +62,9 @@ FROM (
 ) all_errors
 GROUP BY error_date
 ORDER BY error_date DESC;
-
--- ===================================================================
--- CHART 2: ERROR TYPES BY TABLE 
--- ===================================================================
--- Shows which tables have most errors - ALL error tables included
--- Use as BAR CHART in Metabase
+-- Shows error trends from ALL error tables - will show 0 if no errors
+-- Use as LINE CHART in Metabase
+-- Daily Error Count
 
 SELECT 
     'Orders Errors' as table_name,
@@ -128,12 +119,9 @@ WHERE error_timestamp >= CURDATE() - INTERVAL 1 DAY
   AND is_deleted = false
 
 ORDER BY error_count DESC;
-
--- ===================================================================
--- CHART 3: Recent Error Messages 
--- ===================================================================
--- Shows actual error messages from orders table
--- Use as TABLE in Metabase
+-- Shows which tables have most errors - ALL error tables included
+-- Use as BAR CHART in Metabase
+-- Error Types Distribution
 
 SELECT 
     error_type,
@@ -145,12 +133,9 @@ WHERE error_timestamp >= NOW() - INTERVAL 2 HOUR
   AND is_deleted = false
 ORDER BY error_timestamp DESC
 LIMIT 10;
-
--- ===================================================================
--- CHART 4: Data Processing Success Rate 
--- ===================================================================
--- Overall success rate percentage
--- Use as NUMBER CARD in Metabase
+-- Shows actual error messages from orders table
+-- Use as TABLE in Metabase
+-- Recent Error Messages
 
 SELECT 
     ROUND(
@@ -161,3 +146,6 @@ SELECT
     ) as success_rate_percentage,
     (SELECT COUNT(*) FROM ecommerce_ods_clean.ods_orders WHERE DATE(created_at) = CURDATE()) as clean_records,
     (SELECT COUNT(*) FROM ecommerce_ods_error.ods_orders_error WHERE DATE(error_timestamp) = CURDATE()) as error_records; 
+-- Overall success rate percentage
+-- Use as NUMBER CARD in Metabase
+-- Overall success rate percentage

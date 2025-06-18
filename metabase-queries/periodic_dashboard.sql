@@ -1,6 +1,3 @@
--- ========================================
--- Query 1: Customer Lifetime Value Segmentation 
--- ========================================
 SELECT 
     customer_segment,
     COUNT(*) as customers,
@@ -26,15 +23,11 @@ FROM (
 ) customer_analysis
 GROUP BY customer_segment
 ORDER BY avg_clv DESC;
-
 -- CHART SETUP:
 -- Chart Type: Table
 -- Columns: customer_segment, customers, avg_clv, avg_orders, segment_total_revenue
--- Title: "Customer Segmentation by Lifetime Value"
+-- Title: Customer Segmentation by Lifetime Value
 
--- ========================================
--- Query 2: Product Category Performance 
--- ========================================
 SELECT 
     p.category_group,
     COUNT(DISTINCT p.product_id) as total_products,
@@ -47,16 +40,12 @@ WHERE p.is_deleted = false
     AND oi.is_deleted = false
 GROUP BY p.category_group
 ORDER BY total_revenue DESC;
-
 -- CHART SETUP:
 -- Chart Type: Bar Chart
 -- X-axis: category_group
 -- Y-axis: total_revenue
--- Title: "Revenue by Product Category"
+-- Title: Revenue by Product Category
 
--- ========================================
--- Query 3: Weekly Order Trends 
--- ========================================
 SELECT 
     DAYOFWEEK(o.order_purchase_timestamp) as day_of_week,
     CASE DAYOFWEEK(o.order_purchase_timestamp)
@@ -76,16 +65,12 @@ WHERE o.is_deleted = false
     AND p.is_deleted = false
 GROUP BY DAYOFWEEK(o.order_purchase_timestamp)
 ORDER BY day_of_week;
-
 -- CHART SETUP:
 -- Chart Type: Bar Chart
 -- X-axis: day_name
 -- Y-axis: order_count
--- Title: "Orders by Day of Week"
+-- Title: Orders by Day of Week
 
--- ========================================
--- Query 4: Payment Method Distribution 
--- ========================================
 SELECT 
     payment_type,
     COUNT(order_id) as transaction_count,
@@ -96,9 +81,8 @@ FROM ods_payments
 WHERE is_deleted = false
 GROUP BY payment_type
 ORDER BY total_value DESC;
-
 -- CHART SETUP:
 -- Chart Type: Pie Chart
 -- Dimension: payment_type
 -- Measure: total_value
--- Title: "Revenue Distribution by Payment Method"
+-- Title: Revenue Distribution by Payment Method

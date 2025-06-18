@@ -52,6 +52,12 @@ services:
     environment:
       MB_DB_TYPE: h2
       MB_DB_FILE: /metabase-data/metabase.db
+      MB_EMAIL_SMTP_HOST: smtp.gmail.com
+      MB_EMAIL_SMTP_PORT: 587
+      MB_EMAIL_SMTP_SECURITY: starttls
+      MB_EMAIL_SMTP_USERNAME: o84267877@gmail.com
+      MB_EMAIL_SMTP_PASSWORD: qsbs rzaw jovc ouit
+      MB_EMAIL_FROM_ADDRESS: o84267877@gmail.com
     volumes:
       - metabase_data:/metabase-data
     networks:
