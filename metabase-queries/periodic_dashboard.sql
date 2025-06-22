@@ -2,25 +2,11 @@ SELECT
     customer_segment,
     COUNT(*) as customers,
     ROUND(AVG(total_spent), 2) as avg_clv,
-    ROUND(AVG(order_count), 2) as avg_orders,
-    ROUND(SUM(total_spent), 2) as segment_total_revenue
-FROM (
-    SELECT 
-        o.customer_id,
-        CASE 
-            WHEN SUM(p.payment_value) >= 1000 THEN 'VIP'
-            WHEN SUM(p.payment_value) >= 500 THEN 'Premium'
-            WHEN SUM(p.payment_value) >= 200 THEN 'Regular'
-            ELSE 'Basic'
-        END as customer_segment,
-        SUM(p.payment_value) as total_spent,
-        COUNT(o.order_id) as order_count
-    FROM ods_orders o
-    JOIN ods_payments p ON o.order_id = p.order_id
-    WHERE o.is_deleted = false 
-        AND p.is_deleted = false
-    GROUP BY o.customer_id
-) customer_analysis
+    ROUND(AVG(total_orders), 2) as avg_orders,
+    ROUND(SUM(total_spent), 2) as segment_total_revenue,
+    ROUND(MIN(total_spent), 2) as min_clv,
+    ROUND(MAX(total_spent), 2) as max_clv
+FROM ecommerce_ods_clean.mv_customer_lifetime_analysis
 GROUP BY customer_segment
 ORDER BY avg_clv DESC;
 -- CHART SETUP:
@@ -29,16 +15,15 @@ ORDER BY avg_clv DESC;
 -- Title: Customer Segmentation by Lifetime Value
 
 SELECT 
-    p.category_group,
-    COUNT(DISTINCT p.product_id) as total_products,
-    COUNT(oi.order_id) as total_orders,
-    ROUND(SUM(oi.total_item_value), 2) as total_revenue,
-    ROUND(AVG(oi.price), 2) as avg_item_price
-FROM ods_products p
-JOIN ods_order_items oi ON p.product_id = oi.product_id
-WHERE p.is_deleted = false 
-    AND oi.is_deleted = false
-GROUP BY p.category_group
+    category_group,
+    SUM(total_products) as total_products,
+    SUM(total_orders) as total_orders,
+    ROUND(SUM(total_revenue), 2) as total_revenue,
+    ROUND(AVG(avg_item_price), 2) as avg_item_price,
+    SUM(unique_customers) as unique_customers,
+    ROUND(SUM(total_revenue) / SUM(unique_customers), 2) as revenue_per_customer
+FROM ecommerce_ods_clean.mv_category_revenue_analysis
+GROUP BY category_group
 ORDER BY total_revenue DESC;
 -- CHART SETUP:
 -- Chart Type: Bar Chart
@@ -47,23 +32,13 @@ ORDER BY total_revenue DESC;
 -- Title: Revenue by Product Category
 
 SELECT 
-    DAYOFWEEK(o.order_purchase_timestamp) as day_of_week,
-    CASE DAYOFWEEK(o.order_purchase_timestamp)
-        WHEN 1 THEN 'Sunday'
-        WHEN 2 THEN 'Monday'
-        WHEN 3 THEN 'Tuesday'
-        WHEN 4 THEN 'Wednesday'
-        WHEN 5 THEN 'Thursday'
-        WHEN 6 THEN 'Friday'
-        WHEN 7 THEN 'Saturday'
-    END as day_name,
-    COUNT(o.order_id) as order_count,
-    ROUND(AVG(p.payment_value), 2) as avg_order_value
-FROM ods_orders o
-JOIN ods_payments p ON o.order_id = p.order_id
-WHERE o.is_deleted = false 
-    AND p.is_deleted = false
-GROUP BY DAYOFWEEK(o.order_purchase_timestamp)
+    day_of_week,
+    day_name,
+    SUM(order_count) as total_orders,
+    ROUND(AVG(avg_order_value), 2) as avg_order_value,
+    ROUND(SUM(payment_total), 2) as total_revenue
+FROM ecommerce_ods_clean.mv_business_patterns
+GROUP BY day_of_week, day_name
 ORDER BY day_of_week;
 -- CHART SETUP:
 -- Chart Type: Bar Chart
@@ -73,12 +48,11 @@ ORDER BY day_of_week;
 
 SELECT 
     payment_type,
-    COUNT(order_id) as transaction_count,
-    ROUND(SUM(payment_value), 2) as total_value,
-    ROUND(AVG(payment_value), 2) as avg_transaction_value,
-    ROUND(COUNT(order_id) * 100.0 / SUM(COUNT(order_id)) OVER(), 2) as percentage_share
-FROM ods_payments
-WHERE is_deleted = false
+    SUM(payment_count) as transaction_count,
+    ROUND(SUM(payment_total), 2) as total_value,
+    ROUND(AVG(avg_order_value), 2) as avg_transaction_value,
+    ROUND(SUM(payment_total) * 100.0 / (SELECT SUM(payment_total) FROM ecommerce_ods_clean.mv_business_patterns), 2) as percentage_share
+FROM ecommerce_ods_clean.mv_business_patterns
 GROUP BY payment_type
 ORDER BY total_value DESC;
 -- CHART SETUP:

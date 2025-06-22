@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS ods_error_log (
     error_type VARCHAR(50) NOT NULL,
     error_message VARCHAR(500) NOT NULL,
     error_timestamp DATETIME NOT NULL,
-    raw_data JSON,
     retry_count INT,
     is_resolved BOOLEAN,
     is_deleted BOOLEAN NOT NULL,
@@ -18,7 +17,7 @@ CREATE TABLE IF NOT EXISTS ods_error_log (
 PRIMARY KEY (error_id)
 DISTRIBUTED BY HASH(error_id) BUCKETS 10
 PROPERTIES (
-    "replication_num" = "1",
+    "replication_num" = "1", 
     "enable_persistent_index" = "true",
     "compression" = "LZ4"
 );

@@ -113,10 +113,8 @@ PROPERTIES (
     "compression" = "LZ4"
 );
 
--- Show created clean data tables
 SHOW TABLES;
 
--- Display clean table structures for verification
 DESCRIBE ods_orders;
 DESCRIBE ods_order_items;
 DESCRIBE ods_products;

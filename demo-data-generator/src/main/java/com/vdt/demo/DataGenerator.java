@@ -20,43 +20,65 @@ public class DataGenerator {
     private static final Random random = new Random();
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
-    private static final int ORDERS_PER_MINUTE = 20;      // 20 orders per minute
-    private static final int ITEMS_PER_ORDER = 2;         // Average 2 items per order
-    private static final int NEW_CUSTOMERS_PER_HOUR = 10; // 10 new customers per hour
-    private static final int NEW_PRODUCTS_PER_HOUR = 5;   // 5 new products per hour
-    private static final int REVIEWS_PER_HOUR = 30;       // 30 reviews per hour
+    private static final int ORDERS_PER_MINUTE = 120;     
+    private static final int ITEMS_PER_ORDER = 3;         
+    private static final int NEW_CUSTOMERS_PER_HOUR = 60; 
+    private static final int NEW_PRODUCTS_PER_HOUR = 30;  
+    private static final int REVIEWS_PER_HOUR = 180;      
     
     private static List<String> existingCustomers = new ArrayList<>();
     private static List<String> existingProducts = new ArrayList<>();
     private static List<String> recentOrders = new ArrayList<>();
     
+    // Latency testing configuration
+    private static final boolean ENABLE_LATENCY_TESTING = true;
+    private static final int LATENCY_TEST_INTERVAL_MINUTES = 1; 
+    private static final String STARROCKS_URL = "jdbc:mysql://localhost:9030/ecommerce_ods_clean";
+    private static final String STARROCKS_USER = "root";
+    private static final String STARROCKS_PASSWORD = "";
+    
+    // Burst mode configuration
+    private static final boolean ENABLE_BURST_MODE = true;
+    private static final int BURST_ORDERS_COUNT = 50; 
+    private static final int BURST_INTERVAL_MINUTES = 5; 
+
     public static void main(String[] args) {
         System.out.println("Starting Real-Time Data Generator for ODS CDC Pipeline Demo");
         System.out.println("Configuration:");
-        System.out.println("   • Orders: " + ORDERS_PER_MINUTE + " per minute");
-        System.out.println("   • Items per order: ~" + ITEMS_PER_ORDER);
-        System.out.println("   • New customers: " + NEW_CUSTOMERS_PER_HOUR + " per hour");
-        System.out.println("   • New products: " + NEW_PRODUCTS_PER_HOUR + " per hour");
-        System.out.println("   • Reviews: " + REVIEWS_PER_HOUR + " per hour");
+        System.out.println("   Orders: " + ORDERS_PER_MINUTE + " per minute");
+        System.out.println("   Items per order: ~" + ITEMS_PER_ORDER);
+        System.out.println("   New customers: " + NEW_CUSTOMERS_PER_HOUR + " per hour");
+        System.out.println("   New products: " + NEW_PRODUCTS_PER_HOUR + " per hour");
+        System.out.println("   Reviews: " + REVIEWS_PER_HOUR + " per hour");
+        if (ENABLE_LATENCY_TESTING) {
+            System.out.println("   Latency testing: Every " + LATENCY_TEST_INTERVAL_MINUTES + " minutes");
+        }
+        if (ENABLE_BURST_MODE) {
+            System.out.println("   Burst mode: " + BURST_ORDERS_COUNT + " orders every " + BURST_INTERVAL_MINUTES + " minutes");
+        }
         
-        // Initialize caches
         initializeCaches();
         
         // Create scheduler
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(6);
         
-        // Schedule different data generation tasks
         scheduleOrderGeneration(scheduler);
         scheduleCustomerGeneration(scheduler);
         scheduleProductGeneration(scheduler);
         scheduleReviewGeneration(scheduler);
         
-        // Keep the application running
+        if (ENABLE_LATENCY_TESTING) {
+            scheduleLatencyTesting(scheduler);
+        }
+        
+        if (ENABLE_BURST_MODE) {
+            scheduleBurstMode(scheduler);
+        }
+        
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             scheduler.shutdown();
         }));
         
-        // Keep main thread alive
         try {
             Thread.currentThread().join();
         } catch (InterruptedException e) {
@@ -87,13 +109,19 @@ public class DataGenerator {
     }
     
     private static void scheduleOrderGeneration(ScheduledExecutorService scheduler) {
-        int intervalSeconds = 60 / ORDERS_PER_MINUTE; 
+        int batchSize = Math.max(1, ORDERS_PER_MINUTE / 20); 
+        int intervalSeconds = 3;
         
         scheduler.scheduleAtFixedRate(() -> {
             try {
-                generateOrder();
+                for (int i = 0; i < batchSize; i++) {
+                    generateOrder();
+                    if (i < batchSize - 1) {
+                        Thread.sleep(100);
+                    }
+                }
             } catch (Exception e) {
-                System.err.println("Error generating order: " + e.getMessage());
+                System.err.println("Error generating order batch: " + e.getMessage());
             }
         }, 0, intervalSeconds, TimeUnit.SECONDS);
     }
@@ -156,7 +184,7 @@ public class DataGenerator {
                 stmt.executeUpdate();
             }
             
-            int numItems = 1 + random.nextInt(ITEMS_PER_ORDER + 1);
+            int numItems = 1 + random.nextInt(ITEMS_PER_ORDER * 2); 
             double totalOrderValue = 0;
             
             for (int i = 0; i < numItems; i++) {
@@ -262,7 +290,7 @@ public class DataGenerator {
                 int rowsAffected = stmt.executeUpdate();
                 
                 if (rowsAffected > 0) {
-                    System.out.println("⭐ Generated REVIEW: " + orderId + " (" + score + " stars)");
+                    System.out.println("Generated REVIEW: " + orderId + " (" + score + " stars)");
                 }
             }
         }
@@ -280,5 +308,186 @@ public class DataGenerator {
             return random.nextBoolean() ? null : "invalid_product_" + random.nextInt(1000);
         }
         return existingProducts.get(random.nextInt(existingProducts.size()));
+    }
+    
+    private static void scheduleLatencyTesting(ScheduledExecutorService scheduler) {
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                performLatencyTest();
+            } catch (Exception e) {
+                System.err.println("Error in latency test: " + e.getMessage());
+            }
+        }, 30, LATENCY_TEST_INTERVAL_MINUTES * 60, TimeUnit.SECONDS); 
+    }
+    
+    private static void performLatencyTest() {
+        System.out.println("\n=== LATENCY TEST STARTING ===");
+        
+        String testOrderId = "latency_test_" + System.currentTimeMillis();
+        String testCustomerId = getRandomCustomerId();
+        String testProductId = getRandomProductId();
+        
+        long startTime = System.currentTimeMillis();
+        
+        try {
+            insertTestOrder(testOrderId, testCustomerId, testProductId);
+            
+            long latency = waitForDataInStarRocks(testOrderId, startTime);
+            
+            if (latency > 0) {
+                System.out.println("LATENCY TEST RESULT: " + latency + "ms");
+                printLatencyAssessment(latency);
+            } else {
+                System.out.println("LATENCY TEST FAILED: Data not found in StarRocks within timeout");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("LATENCY TEST ERROR: " + e.getMessage());
+        }
+        
+        System.out.println("=== LATENCY TEST COMPLETED ===\n");
+    }
+    
+    private static void insertTestOrder(String orderId, String customerId, String productId) throws SQLException {
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
+            conn.setAutoCommit(false);
+            
+            LocalDateTime now = LocalDateTime.now();
+            
+            String orderSql = "INSERT INTO orders (order_id, customer_id, order_status, order_purchase_timestamp) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement stmt = conn.prepareStatement(orderSql)) {
+                stmt.setString(1, orderId);
+                stmt.setString(2, customerId);
+                stmt.setString(3, "pending");
+                stmt.setTimestamp(4, Timestamp.valueOf(now));
+                stmt.executeUpdate();
+            }
+            
+            String itemSql = "INSERT INTO order_items (order_id, product_id, price, freight_value) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement stmt = conn.prepareStatement(itemSql)) {
+                stmt.setString(1, orderId);
+                stmt.setString(2, productId);
+                stmt.setDouble(3, 99.99);
+                stmt.setDouble(4, 9.99);
+                stmt.executeUpdate();
+            }
+            
+            String paymentSql = "INSERT INTO payments (order_id, payment_type, payment_value) VALUES (?, ?, ?)";
+            try (PreparedStatement stmt = conn.prepareStatement(paymentSql)) {
+                stmt.setString(1, orderId);
+                stmt.setString(2, "credit_card");
+                stmt.setDouble(3, 109.98);
+                stmt.executeUpdate();
+            }
+            
+            conn.commit();
+            System.out.println("Inserted test order: " + orderId);
+        }
+    }
+    
+    private static long waitForDataInStarRocks(String orderId, long startTime) {
+        int maxAttempts = 60; 
+        int attemptInterval = 1000; 
+        
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                Thread.sleep(attemptInterval);
+                
+                if (checkOrderInStarRocks(orderId)) {
+                    long latency = System.currentTimeMillis() - startTime;
+                    System.out.println("Data found in StarRocks after " + attempt + " seconds");
+                    return latency;
+                }
+                
+                if (attempt % 10 == 0) {
+                    System.out.println("Still waiting... (" + attempt + "s)");
+                }
+                
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                System.err.println("Error checking StarRocks: " + e.getMessage());
+            }
+        }
+        
+        return -1; 
+    }
+    
+    private static boolean checkOrderInStarRocks(String orderId) {
+        try (Connection conn = DriverManager.getConnection(STARROCKS_URL, STARROCKS_USER, STARROCKS_PASSWORD)) {
+            String sql = "SELECT COUNT(*) FROM ods_orders WHERE order_id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, orderId);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error checking StarRocks: " + e.getMessage());
+        }
+        return false;
+    }
+    
+    private static void printLatencyAssessment(long latencyMs) {
+        double latencySeconds = latencyMs / 1000.0;
+        
+        System.out.println("Pipeline Performance Assessment:");
+        if (latencySeconds < 1) {
+            System.out.println("  Status: EXCELLENT (< 1s)");
+        } else if (latencySeconds < 5) {
+            System.out.println("  Status: GOOD (1-5s)");
+        } else if (latencySeconds < 15) {
+            System.out.println("  Status: ACCEPTABLE (5-15s)");
+        } else if (latencySeconds < 30) {
+            System.out.println("  Status: SLOW (15-30s)");
+        } else {
+            System.out.println("  Status: VERY SLOW (> 30s)");
+        }
+        
+        System.out.println("  Latency: " + String.format("%.2f", latencySeconds) + " seconds");
+        System.out.println("  Throughput: ~" + Math.round(1000.0 / latencyMs * 3600) + " records/hour");
+    }
+    
+    private static void scheduleBurstMode(ScheduledExecutorService scheduler) {
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                performBurstGeneration();
+            } catch (Exception e) {
+                System.err.println("Error in burst mode: " + e.getMessage());
+            }
+        }, 60, BURST_INTERVAL_MINUTES * 60, TimeUnit.SECONDS); 
+    }
+    
+    private static void performBurstGeneration() {
+        System.out.println("\n=== BURST MODE STARTING ===");
+        System.out.println("Generating " + BURST_ORDERS_COUNT + " orders rapidly...");
+        
+        long startTime = System.currentTimeMillis();
+        int successCount = 0;
+        
+        for (int i = 0; i < BURST_ORDERS_COUNT; i++) {
+            try {
+                generateOrder();
+                successCount++;
+                
+                if (i % 10 == 0 && i > 0) {
+                    Thread.sleep(50);
+                }
+                
+            } catch (Exception e) {
+                System.err.println("Error in burst order " + (i+1) + ": " + e.getMessage());
+            }
+        }
+        
+        long duration = System.currentTimeMillis() - startTime;
+        double ordersPerSecond = successCount / (duration / 1000.0);
+        
+        System.out.println("BURST COMPLETED:");
+        System.out.println("  Generated: " + successCount + "/" + BURST_ORDERS_COUNT + " orders");
+        System.out.println("  Duration: " + String.format("%.2f", duration/1000.0) + " seconds");
+        System.out.println("  Rate: " + String.format("%.1f", ordersPerSecond) + " orders/second");
+        System.out.println("=== BURST MODE COMPLETED ===\n");
     }
 } 

@@ -10,6 +10,7 @@ public class SqlQueries {
         "    order_purchase_timestamp TIMESTAMP(3)," +
         "    order_delivered_customer_date TIMESTAMP(3)," +
         "    order_estimated_delivery_date TIMESTAMP(3)," +
+        "    is_deleted BOOLEAN," +
         "    PRIMARY KEY (order_id) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'postgres-cdc'," +
@@ -30,6 +31,7 @@ public class SqlQueries {
         "    product_id STRING," +
         "    price DOUBLE," +
         "    freight_value DOUBLE," +
+        "    is_deleted BOOLEAN," +
         "    PRIMARY KEY (order_id, product_id) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'postgres-cdc'," +
@@ -48,6 +50,7 @@ public class SqlQueries {
         "CREATE TABLE products_source (" +
         "    product_id STRING," +
         "    product_category_name STRING," +
+        "    is_deleted BOOLEAN," +
         "    PRIMARY KEY (product_id) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'postgres-cdc'," +
@@ -66,6 +69,7 @@ public class SqlQueries {
         "CREATE TABLE reviews_source (" +
         "    order_id STRING," +
         "    review_score INT," +
+        "    is_deleted BOOLEAN," +
         "    PRIMARY KEY (order_id) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'postgres-cdc'," +
@@ -85,6 +89,7 @@ public class SqlQueries {
         "    order_id STRING," +
         "    payment_type STRING," +
         "    payment_value DOUBLE," +
+        "    is_deleted BOOLEAN," +
         "    PRIMARY KEY (order_id, payment_type) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'postgres-cdc'," +
@@ -105,6 +110,7 @@ public class SqlQueries {
         "    customer_unique_id STRING," +
         "    customer_city STRING," +
         "    customer_state STRING," +
+        "    is_deleted BOOLEAN," +
         "    PRIMARY KEY (customer_id) NOT ENFORCED" +
         ") WITH (" +
         "    'connector' = 'postgres-cdc'," +
@@ -443,5 +449,34 @@ public class SqlQueries {
         "    'sink.properties.strip_outer_array' = 'true'," +
         "    'sink.buffer-flush.max-rows' = '64000'," +
         "    'sink.buffer-flush.interval-ms' = '5000'" +
+        ")";
+
+    public static final String CREATE_ERROR_LOG_SINK = 
+        "CREATE TABLE error_log_sink (" +
+        "    error_id STRING," +
+        "    table_name STRING," +
+        "    record_id STRING," +
+        "    error_type STRING," +
+        "    error_message STRING," +
+        "    error_timestamp TIMESTAMP(3)," +
+        "    retry_count INT," +
+        "    is_resolved BOOLEAN," +
+        "    is_deleted BOOLEAN," +
+        "    created_at TIMESTAMP(3)," +
+        "    updated_at TIMESTAMP(3)," +
+        "    PRIMARY KEY (error_id) NOT ENFORCED" +
+        ") WITH (" +
+        "    'connector' = 'starrocks'," +
+        "    'jdbc-url' = 'jdbc:mysql://localhost:9030'," +
+        "    'load-url' = 'localhost:8030'," +
+        "    'username' = 'root'," +
+        "    'password' = ''," +
+        "    'database-name' = 'ecommerce_ods_error'," +
+        "    'table-name' = 'ods_error_log'," +
+        "    'sink.properties.format' = 'json'," +
+        "    'sink.properties.strip_outer_array' = 'true'," +
+        "    'sink.buffer-flush.max-rows' = '64000'," +
+        "    'sink.buffer-flush.interval-ms' = '5000'," +
+        "    'sink.semantic' = 'exactly-once'" +
         ")";
 } 

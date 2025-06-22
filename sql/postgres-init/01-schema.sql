@@ -11,6 +11,7 @@ CREATE TABLE orders (
   "order_delivered_carrier_date" TIMESTAMP,
   "order_delivered_customer_date" TIMESTAMP,
   "order_estimated_delivery_date" TIMESTAMP,
+  "is_deleted" BOOLEAN DEFAULT FALSE,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -21,6 +22,7 @@ CREATE TABLE customers (
   "customer_zip_code_prefix" VARCHAR(10),
   "customer_city" VARCHAR(100),
   "customer_state" VARCHAR(10),
+  "is_deleted" BOOLEAN DEFAULT FALSE,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -34,6 +36,7 @@ CREATE TABLE order_items (
   "shipping_limit_date" TIMESTAMP,
   "price" DOUBLE PRECISION,
   "freight_value" DOUBLE PRECISION,
+  "is_deleted" BOOLEAN DEFAULT FALSE,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -45,6 +48,7 @@ CREATE TABLE payments (
   "payment_type" VARCHAR(20),
   "payment_installments" INTEGER,
   "payment_value" DOUBLE PRECISION,
+  "is_deleted" BOOLEAN DEFAULT FALSE,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -57,6 +61,7 @@ CREATE TABLE reviews (
   "review_comment_message" TEXT,
   "review_creation_date" TIMESTAMP,
   "review_answer_timestamp" TIMESTAMP,
+  "is_deleted" BOOLEAN DEFAULT FALSE,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -71,6 +76,7 @@ CREATE TABLE products (
   "product_length_cm" DOUBLE PRECISION,
   "product_height_cm" DOUBLE PRECISION,
   "product_width_cm" DOUBLE PRECISION,
+  "is_deleted" BOOLEAN DEFAULT FALSE,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -80,6 +86,7 @@ CREATE TABLE sellers (
   "seller_zip_code_prefix" VARCHAR(10),
   "seller_city" VARCHAR(100),
   "seller_state" VARCHAR(10),
+  "is_deleted" BOOLEAN DEFAULT FALSE,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

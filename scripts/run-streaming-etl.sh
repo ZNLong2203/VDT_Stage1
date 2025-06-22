@@ -10,14 +10,12 @@ JAR_FILE="$JAVA_ETL_DIR/target/flink-etl-pipeline-1.0.0.jar"
 
 echo "Starting Streaming ETL Pipeline..."
 
-# Check if Flink cluster is running
 check_flink_cluster() {
     if ! curl -s "http://localhost:8081/config" > /dev/null 2>&1; then
         echo "Starting Flink cluster..."
         cd "$FLINK_HOME"
         ./bin/start-cluster.sh
         
-        # Wait for Flink to be ready
         for i in {1..30}; do
             if curl -s "http://localhost:8081/config" > /dev/null 2>&1; then
                 echo "Flink cluster ready"
@@ -32,7 +30,6 @@ check_flink_cluster() {
     fi
 }
 
-# Build Java ETL
 build_java_etl() {
     echo "Building Java ETL..."
     cd "$JAVA_ETL_DIR"
@@ -50,7 +47,6 @@ build_java_etl() {
     fi
 }
 
-# Cancel existing jobs
 cancel_existing_jobs() {
     JOBS=$(curl -s "http://localhost:8081/jobs" | python3 -c "
 import sys, json
@@ -72,7 +68,6 @@ except:
     fi
 }
 
-# Submit ETL job
 submit_etl_job() {
     echo "Submitting ETL job..."
     cd "$FLINK_HOME"
@@ -87,9 +82,7 @@ submit_etl_job() {
     sleep 5
 }
 
-# Main execution
 main() {
-    # Check if services are running
     if ! docker ps | grep -q starrocks-allin1; then
         echo "ERROR: StarRocks not running. Start with: docker compose up -d"
         exit 1
@@ -100,7 +93,6 @@ main() {
         exit 1
     fi
     
-    # Execute pipeline
     check_flink_cluster
     build_java_etl
     cancel_existing_jobs
@@ -116,5 +108,4 @@ main() {
     echo "Check jobs: curl http://localhost:8081/jobs"
 }
 
-# Run main function
 main "$@" 

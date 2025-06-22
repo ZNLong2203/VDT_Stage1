@@ -27,6 +27,11 @@ echo "Setting up StarRocks Error Data schema..."
 mysql -h localhost -P 9030 -u root --protocol=TCP < sql/starrocks-init/create-error-schema.sql
 echo "StarRocks Error Data schema created!"
 
+sleep 20
+echo "Setting up StarRocks Materialized Views..."
+mysql -h localhost -P 9030 -u root --protocol=TCP < sql/starrocks-init/create-materialized-views.sql
+echo "StarRocks Materialized Views created!"
+
 # Show data summary
 echo ""
 echo "Data Summary (All tables in PostgreSQL):"
